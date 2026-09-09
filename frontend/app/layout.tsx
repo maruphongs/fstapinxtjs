@@ -35,6 +35,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <Link href="/products">
               Products
             </Link>
+            <Link href="/categories">
+              Categories
+            </Link>
           </div>
         </nav>
         {children}
