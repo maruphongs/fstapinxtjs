@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi[standard]>=0.141.1",
+    "pyjwt>=2.13.0",
     "sqlalchemy>=2.0.52",
 ]
 

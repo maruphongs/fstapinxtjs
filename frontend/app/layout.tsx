@@ -29,9 +29,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             Home
           </Link>
           <div className="space-x-4">
-            <Link href="/students">
-              Students
-            </Link>
             <Link href="/products">
               Products
             </Link>
