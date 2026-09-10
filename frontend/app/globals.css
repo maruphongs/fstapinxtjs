@@ -2,7 +2,11 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #111111;
+  --fastapi-teal: #009688;
+  --fastapi-blue: #0b7fab;
+  --border: #dbe4e7;
+  --muted: #5f6b70;
 }
 
 @theme inline {

@@ -16,6 +16,14 @@ from app.schemas.product import (
     ProductResponse,
     ProductUpdate,
 )
+from app.schemas.auth import (
+    Token,
+    TokenPayload,
+    UserBase,
+    UserLogin,
+    UserRegister,
+    UserResponse,
+)
 
 __all__ = [
     "CategoryBase",
@@ -30,4 +38,10 @@ __all__ = [
     "ProductSummary",
     "RelationshipResponse",
     "MessageResponse",
+    "Token",
+    "TokenPayload",
+    "UserBase",
+    "UserLogin",
+    "UserRegister",
+    "UserResponse",
 ]

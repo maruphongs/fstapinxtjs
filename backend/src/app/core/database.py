@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, inspect, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker, Session
 
@@ -31,7 +31,49 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
+def seed_default_users(db: Session) -> None:
+    from app.auth.security import get_password_hash
+    from app.models.user import User
+
+    # Seed Admin user if not exists
+    admin = db.scalar(select(User).where(User.username == "admin"))
+    if not admin:
+        admin_user = User(
+            username="admin",
+            hashed_password=get_password_hash("1234"),
+            role="admin",
+            is_active=True,
+        )
+        db.add(admin_user)
+
+    # Seed Viewer/Regular user if not exists
+    regular_user = db.scalar(select(User).where(User.username == "user"))
+    if not regular_user:
+        viewer_user = User(
+            username="user",
+            hashed_password=get_password_hash("1234"),
+            role="user",
+            is_active=True,
+        )
+        db.add(viewer_user)
+
+    db.commit()
+
+
 def init_db() -> None:
     from app.models.base import Base
+    from app.models.user import User
     import app.models  # Ensure all models are registered with Base.metadata
+
+    # Check if existing users table schema is outdated (e.g. created with old email column)
+    inspector = inspect(engine)
+    if inspector.has_table("users"):
+        existing_cols = {col["name"] for col in inspector.get_columns("users")}
+        if "username" not in existing_cols or "role" not in existing_cols:
+            User.__table__.drop(bind=engine)
+
     Base.metadata.create_all(bind=engine)
+
+    # Seed default users
+    with SessionLocal() as db:
+        seed_default_users(db)

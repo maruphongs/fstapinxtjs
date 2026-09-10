@@ -3,9 +3,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.auth.dependencies import get_current_admin_user
 from app.core.database import get_db
 from app.crud import category as crud_category
 from app.crud import product as crud_product
+from app.models.user import User
 from app.schemas.common import RelationshipResponse
 from app.schemas.product import ProductCreate, ProductResponse, ProductUpdate
 
@@ -15,15 +17,18 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 def create_product(
     product_in: ProductCreate,
     db: Annotated[Session, Depends(get_db)],
+    current_admin: Annotated[User, Depends(get_current_admin_user)],
 ):
     return crud_product.create_product(db, product_in)
 
 
-@router.get("/", response_model=list[ProductResponse])
+@router.get("", response_model=list[ProductResponse])
+@router.get("/", response_model=list[ProductResponse], include_in_schema=False)
 def get_products(
     db: Annotated[Session, Depends(get_db)],
     skip: int = Query(0, ge=0),
@@ -48,6 +53,7 @@ def update_product(
     product_id: int,
     product_in: ProductUpdate,
     db: Annotated[Session, Depends(get_db)],
+    current_admin: Annotated[User, Depends(get_current_admin_user)],
 ):
     product = crud_product.get_product(db, product_id)
     if product is None:
@@ -60,6 +66,7 @@ def update_product(
 def delete_product(
     product_id: int,
     db: Annotated[Session, Depends(get_db)],
+    current_admin: Annotated[User, Depends(get_current_admin_user)],
 ):
     product = crud_product.get_product(db, product_id)
     if product is None:
@@ -77,6 +84,7 @@ def add_product_category(
     product_id: int,
     category_id: int,
     db: Annotated[Session, Depends(get_db)],
+    current_admin: Annotated[User, Depends(get_current_admin_user)],
 ):
     product = crud_product.get_product(db, product_id)
     if product is None:
@@ -98,6 +106,7 @@ def remove_product_category(
     product_id: int,
     category_id: int,
     db: Annotated[Session, Depends(get_db)],
+    current_admin: Annotated[User, Depends(get_current_admin_user)],
 ):
     product = crud_product.get_product(db, product_id)
     if product is None:

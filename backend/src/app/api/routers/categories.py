@@ -4,9 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.auth.dependencies import get_current_admin_user
 from app.core.database import get_db
 from app.crud import category as crud_category
 from app.crud import product as crud_product
+from app.models.user import User
 from app.schemas.category import CategoryCreate, CategoryResponse, CategoryUpdate
 from app.schemas.common import RelationshipResponse
 
@@ -16,10 +18,12 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 def create_category(
     category_in: CategoryCreate,
     db: Annotated[Session, Depends(get_db)],
+    current_admin: Annotated[User, Depends(get_current_admin_user)],
 ):
     existing = crud_category.get_category_by_name(db, category_in.name)
     if existing:
@@ -32,7 +36,8 @@ def create_category(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Category name already exists")
 
 
-@router.get("/", response_model=list[CategoryResponse])
+@router.get("", response_model=list[CategoryResponse])
+@router.get("/", response_model=list[CategoryResponse], include_in_schema=False)
 def get_categories(
     db: Annotated[Session, Depends(get_db)],
     skip: int = Query(0, ge=0),
@@ -57,6 +62,7 @@ def update_category(
     category_id: int,
     category_in: CategoryUpdate,
     db: Annotated[Session, Depends(get_db)],
+    current_admin: Annotated[User, Depends(get_current_admin_user)],
 ):
     category = crud_category.get_category(db, category_id)
     if category is None:
@@ -78,6 +84,7 @@ def update_category(
 def delete_category(
     category_id: int,
     db: Annotated[Session, Depends(get_db)],
+    current_admin: Annotated[User, Depends(get_current_admin_user)],
 ):
     category = crud_category.get_category(db, category_id)
     if category is None:
@@ -97,6 +104,7 @@ def add_product_category_legacy(
     product_id: int,
     category_id: int,
     db: Annotated[Session, Depends(get_db)],
+    current_admin: Annotated[User, Depends(get_current_admin_user)],
 ):
     product = crud_product.get_product(db, product_id)
     if product is None:
@@ -119,6 +127,7 @@ def remove_product_category_legacy(
     product_id: int,
     category_id: int,
     db: Annotated[Session, Depends(get_db)],
+    current_admin: Annotated[User, Depends(get_current_admin_user)],
 ):
     product = crud_product.get_product(db, product_id)
     if product is None:

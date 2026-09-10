@@ -12,13 +12,17 @@ class Settings(BaseModel):
     
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
-        # SQLite URL with forward slashes for cross-platform compatibility
         return f"sqlite:///{self.DATABASE_PATH.as_posix()}"
     
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ]
+
+    # JWT Authentication settings
+    SECRET_KEY: str = "super-secret-jwt-key-for-fastapi-nextjs-2026"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
 
 settings = Settings()
