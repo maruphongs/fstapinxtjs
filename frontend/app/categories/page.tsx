@@ -193,10 +193,9 @@ export default function CategoriesPage() {
               + Add category
             </button>
           ) : (
-            <div className="flex items-center gap-2.5 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-2.5 rounded-lg text-xs font-semibold">
-              <span>👁️ Viewer Mode (Read-only)</span>
+            <div className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold">
               <LoginDialog className="ml-1 font-bold text-amber-900 underline hover:text-black">
-                Sign in as Admin
+                Sign in
               </LoginDialog>
             </div>
           )}

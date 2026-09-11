@@ -56,7 +56,7 @@ export default function LoginForm({ onSuccess, onCancel }: LoginFormProps) {
             value={username}
             onChange={(event) => setUsername(event.target.value)}
             autoComplete="username"
-            placeholder="e.g. admin or user"
+            placeholder="username"
             className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm normal-case tracking-normal text-[#111111] placeholder-slate-400 outline-none transition-all focus:border-[#009688] focus:ring-2 focus:ring-[#009688]/20"
           />
         </div>
@@ -132,18 +132,18 @@ export default function LoginForm({ onSuccess, onCancel }: LoginFormProps) {
             type="button"
             disabled={loading}
             onClick={() => handleQuickLogin("admin", "1234")}
-            className="rounded-xl border border-amber-200 bg-amber-50 p-2 text-center text-xs font-medium text-amber-800 transition-colors hover:bg-amber-100"
+            className="rounded-xl border border-amber-200 p-2 text-center text-xs font-medium text-amber-800 transition-colors"
           >
-            <div className="font-bold">🔑 Admin</div>
+            <div className="font-bold">Admin</div>
             <div className="text-[10px] text-amber-400/80">admin / 1234</div>
           </button>
           <button
             type="button"
             disabled={loading}
             onClick={() => handleQuickLogin("user", "1234")}
-            className="rounded-xl border border-[#b9dce9] bg-[#eef8fb] p-2 text-center text-xs font-medium text-[#0b6f91] transition-colors hover:bg-[#dff2f7]"
+            className="rounded-xl border border-[#b9dce9] p-2 text-center text-xs font-medium text-[#0b6f91] transition-colors"
           >
-            <div className="font-bold">👁️ Viewer</div>
+            <div className="font-bold">Viewer</div>
             <div className="text-[10px] text-blue-400/80">user / 1234</div>
           </button>
         </div>
