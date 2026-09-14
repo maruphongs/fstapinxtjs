@@ -28,3 +28,13 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes spin-3d {
+  0% { transform: rotateX(0deg) rotateY(0deg); }
+  100% { transform: rotateX(0deg) rotateY(360deg); }
+}
+
+.animate-spin-3d {
+  animation: spin-3d 6.7s linear infinite;
+  transform-style: preserve-3d;
+}

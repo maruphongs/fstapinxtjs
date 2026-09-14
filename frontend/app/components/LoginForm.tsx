@@ -30,19 +30,6 @@ export default function LoginForm({ onSuccess, onCancel }: LoginFormProps) {
     }
   }
 
-  async function handleQuickLogin(user: string, pass: string) {
-    setError("");
-    setLoading(true);
-    try {
-      await login(user, pass);
-      onSuccess();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Quick login failed.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <div className="w-full max-w-md mx-auto">
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -121,33 +108,6 @@ export default function LoginForm({ onSuccess, onCancel }: LoginFormProps) {
           )}
         </div>
       </form>
-
-      {/* Quick Demo Login */}
-      <div className="mt-6 border-t border-slate-200 pt-5">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 text-center mb-2.5">
-          Quick Demo Login
-        </p>
-        <div className="grid grid-cols-2 gap-2.5">
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => handleQuickLogin("admin", "1234")}
-            className="rounded-xl border border-amber-200 p-2 text-center text-xs font-medium text-amber-800 transition-colors"
-          >
-            <div className="font-bold">Admin</div>
-            <div className="text-[10px] text-amber-400/80">admin / 1234</div>
-          </button>
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => handleQuickLogin("user", "1234")}
-            className="rounded-xl border border-[#b9dce9] p-2 text-center text-xs font-medium text-[#0b6f91] transition-colors"
-          >
-            <div className="font-bold">Viewer</div>
-            <div className="text-[10px] text-blue-400/80">user / 1234</div>
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
