@@ -86,3 +86,56 @@ export async function authFetch(input: RequestInfo | URL, init?: RequestInit): P
   }
   return fetch(input, { ...init, headers });
 }
+
+export async function getUsers(): Promise<AuthUser[]> {
+  const res = await authFetch(`${API_URL}/users`, { cache: "no-store" });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail ?? "Failed to fetch users.");
+  }
+  return res.json();
+}
+
+export async function createUser(data: {
+  username: string;
+  password: string;
+  role?: string;
+}): Promise<AuthUser> {
+  const res = await authFetch(`${API_URL}/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail ?? "Failed to create user.");
+  }
+  return res.json();
+}
+
+export async function updateUser(
+  userId: number,
+  data: { role?: string; is_active?: boolean; password?: string }
+): Promise<AuthUser> {
+  const res = await authFetch(`${API_URL}/users/${userId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail ?? "Failed to update user.");
+  }
+  return res.json();
+}
+
+export async function deleteUser(userId: number): Promise<void> {
+  const res = await authFetch(`${API_URL}/users/${userId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail ?? "Failed to delete user.");
+  }
+}
+

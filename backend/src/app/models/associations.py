@@ -1,4 +1,5 @@
 from sqlalchemy import Column, ForeignKey, Table
+
 from app.models.base import Base
 
 product_categories = Table(

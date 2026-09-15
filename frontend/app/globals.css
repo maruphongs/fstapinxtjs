@@ -34,7 +34,21 @@ body {
   100% { transform: rotateX(0deg) rotateY(360deg); }
 }
 
+@keyframes float-spin {
+  0% { transform: translateY(0) translateX(100px) rotateY(0deg); }
+  25% { transform: translateY(-200px) translateX(0px) rotateY(90deg); }
+  50% { transform: translateY(0) translateX(100px) rotateY(180deg); }
+  75% { transform: translateY(200px) translateX(0px) rotateY(270deg); }
+  100% { transform: translateY(0) translateX(100px) rotateY(360deg); }
+}
+
+
 .animate-spin-3d {
   animation: spin-3d 6.7s linear infinite;
+  transform-style: preserve-3d;
+}
+
+.animate-float-spin {
+  animation: float-spin 13.4s ease-in-out infinite;
   transform-style: preserve-3d;
 }

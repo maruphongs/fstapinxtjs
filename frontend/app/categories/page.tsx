@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { API_URL, AuthUser, authFetch, getUser } from "../lib/auth";
-import LoginDialog from "../components/LoginDialog";
 
 type Product = { id: number; name: string; price: number };
 type Category = { id: number; name: string; products: Product[] };
@@ -82,7 +80,7 @@ export default function CategoriesPage() {
     };
   }, [actionMenuId]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!isAdmin) {
       setError("Admin privileges required to save categories.");
@@ -174,7 +172,7 @@ export default function CategoriesPage() {
     <main className="min-h-screen bg-white px-4 py-10 font-sans text-slate-900 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-6xl">
         <header className="mb-8">
-          <p className="mb-2 text-sm font-bold uppercase tracking-[0.2em] text-emerald-700">Catalog</p>
+          <p className="mb-2 text-sm font-bold uppercase tracking-[0.2em] text-teal-700">Catalog</p>
           <h1 className="text-4xl font-bold tracking-tight">Categories</h1>
           <p className="mt-2 max-w-xl text-slate-600">Create and organize the labels used across your products.</p>
         </header>
@@ -192,13 +190,7 @@ export default function CategoriesPage() {
             >
               + Add category
             </button>
-          ) : (
-            <div className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold">
-              <LoginDialog className="ml-1 font-bold text-amber-900 underline hover:text-black">
-                Sign in
-              </LoginDialog>
-            </div>
-          )}
+          ) : null}
         </section>
 
         {error && <p className="mb-6 text-sm text-red-700 bg-red-50 p-3 border border-red-200 rounded" role="alert">{error}</p>}

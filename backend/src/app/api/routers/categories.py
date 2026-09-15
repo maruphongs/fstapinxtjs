@@ -91,7 +91,7 @@ def delete_category(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
 
     crud_category.delete_category(db, category)
-    return None
+    return { "message": "Category deleted successfully" }
 
 
 # Backwards-compatibility alias for legacy clients that called /categories/products/...

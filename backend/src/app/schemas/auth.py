@@ -14,6 +14,17 @@ class UserRegister(UserBase):
     password: str = Field(min_length=4)
 
 
+class UserCreate(UserRegister):
+    role: str = "user"
+    is_active: bool = True
+
+
+class UserUpdate(BaseModel):
+    role: str | None = None
+    is_active: bool | None = None
+    password: str | None = Field(default=None, min_length=4)
+
+
 class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
 

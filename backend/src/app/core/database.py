@@ -1,7 +1,9 @@
 from collections.abc import Generator
-from sqlalchemy import create_engine, event, inspect, select
+from typing import cast
+
+from sqlalchemy import Table, create_engine, event, inspect, select
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
 
@@ -35,7 +37,7 @@ def seed_default_users(db: Session) -> None:
     from app.auth.security import get_password_hash
     from app.models.user import User
 
-    # Seed Admin user if not exists
+    # Seed Admin user if not exists, or update legacy hash
     admin = db.scalar(select(User).where(User.username == "admin"))
     if not admin:
         admin_user = User(
@@ -45,8 +47,10 @@ def seed_default_users(db: Session) -> None:
             is_active=True,
         )
         db.add(admin_user)
+    elif not admin.hashed_password.startswith("$argon2"):
+        admin.hashed_password = get_password_hash("1234")
 
-    # Seed Viewer/Regular user if not exists
+    # Seed Viewer/Regular user if not exists, or update legacy hash
     regular_user = db.scalar(select(User).where(User.username == "user"))
     if not regular_user:
         viewer_user = User(
@@ -56,21 +60,23 @@ def seed_default_users(db: Session) -> None:
             is_active=True,
         )
         db.add(viewer_user)
+    elif not regular_user.hashed_password.startswith("$argon2"):
+        regular_user.hashed_password = get_password_hash("1234")
 
     db.commit()
 
 
 def init_db() -> None:
+    import app.models  # noqa: F401  # Ensure all models are registered with Base.metadata
     from app.models.base import Base
     from app.models.user import User
-    import app.models  # Ensure all models are registered with Base.metadata
 
     # Check if existing users table schema is outdated (e.g. created with old email column)
     inspector = inspect(engine)
     if inspector.has_table("users"):
         existing_cols = {col["name"] for col in inspector.get_columns("users")}
         if "username" not in existing_cols or "role" not in existing_cols:
-            User.__table__.drop(bind=engine)
+            cast(Table, User.__table__).drop(bind=engine)
 
     Base.metadata.create_all(bind=engine)
 

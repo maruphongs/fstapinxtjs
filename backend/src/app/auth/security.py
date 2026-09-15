@@ -1,35 +1,39 @@
-from datetime import datetime, timedelta, timezone
 import hashlib
 import secrets
+from datetime import datetime, timedelta, timezone
 from typing import Any
+
 import jwt
+from pwdlib import PasswordHash
+from pwdlib.exceptions import UnknownHashError
 
 from app.core.config import settings
 
+password_hash = PasswordHash.recommended()
+
 
 def get_password_hash(password: str) -> str:
-    """Generate salted PBKDF2-HMAC-SHA256 hash."""
-    salt = secrets.token_hex(16)
-    key = hashlib.pbkdf2_hmac(
-        "sha256",
-        password.encode("utf-8"),
-        salt.encode("utf-8"),
-        100000,
-    )
-    return f"{salt}${key.hex()}"
+    """Generate Argon2 password hash using pwdlib."""
+    return password_hash.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify password against stored salt$hash."""
+    """Verify password against stored hash using pwdlib with legacy PBKDF2 fallback."""
     try:
-        salt, stored_hash = hashed_password.split("$", 1)
-        key = hashlib.pbkdf2_hmac(
-            "sha256",
-            plain_password.encode("utf-8"),
-            salt.encode("utf-8"),
-            100000,
-        )
-        return secrets.compare_digest(key.hex(), stored_hash)
+        return password_hash.verify(plain_password, hashed_password)
+    except UnknownHashError:
+        # Legacy salted PBKDF2 fallback
+        try:
+            salt, stored_hash = hashed_password.split("$", 1)
+            key = hashlib.pbkdf2_hmac(
+                "sha256",
+                plain_password.encode("utf-8"),
+                salt.encode("utf-8"),
+                100000,
+            )
+            return secrets.compare_digest(key.hex(), stored_hash)
+        except Exception:
+            return False
     except Exception:
         return False
 

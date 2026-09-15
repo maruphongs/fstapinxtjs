@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { API_URL, AuthUser, authFetch, getUser } from "../lib/auth";
-import LoginDialog from "../components/LoginDialog";
 
 type Product = {
   id: number;
@@ -189,16 +187,16 @@ export default function ProductPage() {
     const comparison = typeof aValue === "string" ? aValue.localeCompare(String(bValue)) : Number(aValue) - Number(bValue);
     return ui.sortAscending ? comparison : -comparison;
   });
-  const statusColors = { online: "border-emerald-200 text-emerald-800 bg-emerald-50", offline: "border-red-200 text-red-800 bg-red-50", checking: "border-slate-200 text-slate-600 bg-slate-50" };
-  const dotColors = { online: "bg-emerald-600", offline: "bg-red-600", checking: "bg-slate-400" };
+  const statusColors = { online: "border-teal-200 text-teal-800 bg-teal-50", offline: "border-red-200 text-red-800 bg-red-50", checking: "border-slate-200 text-slate-600 bg-slate-50" };
+  const dotColors = { online: "bg-teal-600", offline: "bg-red-600", checking: "bg-slate-400" };
   const activeProduct = products.find((product) => product.id === ui.actionMenuId);
 
   return (
-    <main className="min-h-screen bg-white px-4 py-10 font-sans text-slate-900 sm:px-6 sm:py-16">
+    <main className="min-h-screen bg-white px-4 py-10 font-sans text-black sm:px-6 sm:py-16">
       <div className="mx-auto max-w-6xl">
         <header className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="mb-2 text-sm font-bold uppercase tracking-[0.2em] text-emerald-700">Catalog</p>
+            <p className="mb-2 text-sm font-bold uppercase tracking-[0.2em] text-teal-700">Catalog</p>
             <h1 className="text-4xl font-bold tracking-tight">Products</h1>
             <p className="mt-2 max-w-xl text-slate-600">Manage your product catalog and its category relationships.</p>
           </div>
@@ -210,13 +208,7 @@ export default function ProductPage() {
             >
               + Add product
             </button>
-          ) : (
-            <div className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold">
-              <LoginDialog className="ml-1 font-bold text-amber-900 underline hover:text-black">
-                Sign in
-              </LoginDialog>
-            </div>
-          )}
+          ) : null}
         </header>
 
         <section className="border border-slate-200 bg-white p-5 sm:p-7 shadow-sm">

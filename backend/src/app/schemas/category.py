@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field
+
 from app.schemas.common import CategorySummary, ProductSummary
 
 
@@ -25,7 +26,7 @@ class CategoryResponse(BaseModel):
 __all__ = [
     "CategoryBase",
     "CategoryCreate",
-    "CategoryUpdate",
     "CategoryResponse",
     "CategorySummary",
+    "CategoryUpdate",
 ]

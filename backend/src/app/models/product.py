@@ -1,8 +1,8 @@
 from sqlalchemy import Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base
 from app.models.associations import product_categories
+from app.models.base import Base
 from app.models.category import Category
 
 
@@ -22,4 +22,4 @@ class Product(Base):
     )
 
 
-__all__ = ["Product", "Category", "product_categories"]
+__all__ = ["Category", "Product", "product_categories"]

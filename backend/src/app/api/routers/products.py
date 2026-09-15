@@ -73,7 +73,7 @@ def delete_product(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
 
     crud_product.delete_product(db, product)
-    return None
+    return { "message": "Product deleted successfully" }
 
 
 @router.post(
