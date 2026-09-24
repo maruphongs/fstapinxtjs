@@ -2,6 +2,13 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { API_URL, AuthUser, authFetch, getUser } from "../lib/auth";
+import {
+  gqlCreateProduct,
+  gqlDeleteProduct,
+  gqlGetCategories,
+  gqlGetProducts,
+  gqlUpdateProduct,
+} from "../lib/graphql";
 
 type Product = {
   id: number;
@@ -15,6 +22,7 @@ type SortKey = "id" | "name" | "price";
 type ConnectionStatus = "checking" | "online" | "offline";
 
 export default function ProductPage() {
+  const [apiMode, setApiMode] = useState<"graphql" | "rest">("graphql");
   const [user, setUser] = useState<AuthUser | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -44,9 +52,14 @@ export default function ProductPage() {
   async function loadProducts(showLoading = false) {
     try {
       if (showLoading) setUi((current) => ({ ...current, loading: true }));
-      const response = await fetch(`${API_URL}/products`, { cache: "no-store" });
-      if (!response.ok) throw new Error("Could not load products.");
-      setProducts(await response.json());
+      if (apiMode === "graphql") {
+        const data = await gqlGetProducts();
+        setProducts(data as Product[]);
+      } else {
+        const response = await fetch(`${API_URL}/products`, { cache: "no-store" });
+        if (!response.ok) throw new Error("Could not load products.");
+        setProducts(await response.json());
+      }
       setStatus({ connection: "online", error: "" });
     } catch (err) {
       setStatus((current) => ({ ...current, connection: "offline", error: showLoading && err instanceof Error ? err.message : "Could not load products." }));
@@ -57,9 +70,14 @@ export default function ProductPage() {
 
   async function loadCategories() {
     try {
-      const response = await fetch(`${API_URL}/categories`, { cache: "no-store" });
-      if (!response.ok) throw new Error("Could not load categories.");
-      setCategories(await response.json());
+      if (apiMode === "graphql") {
+        const data = await gqlGetCategories();
+        setCategories(data as Category[]);
+      } else {
+        const response = await fetch(`${API_URL}/categories`, { cache: "no-store" });
+        if (!response.ok) throw new Error("Could not load categories.");
+        setCategories(await response.json());
+      }
     } catch (err) {
       setStatus((current) => ({ ...current, error: err instanceof Error ? err.message : "Could not load categories." }));
     }
@@ -68,9 +86,9 @@ export default function ProductPage() {
   useEffect(() => {
     void loadProducts(true);
     void loadCategories();
-    const refreshTimer = window.setInterval(() => void loadProducts(), 5000);
+    const refreshTimer = window.setInterval(() => void loadProducts(), 10000);
     return () => window.clearInterval(refreshTimer);
-  }, []);
+  }, [apiMode]);
 
   useEffect(() => {
     if (!ui.isModalOpen && ui.actionMenuId === null) return;
@@ -106,6 +124,37 @@ export default function ProductPage() {
       return;
     }
     const isEditing = form.editingId !== null;
+
+    if (apiMode === "graphql") {
+      try {
+        setUi((current) => ({ ...current, submitting: true }));
+        setStatus({ connection: "online", error: "" });
+        if (isEditing) {
+          await gqlUpdateProduct(form.editingId!, {
+            name: form.name.trim(),
+            description: form.description.trim(),
+            price: Number(form.price),
+            categoryIds: form.categoryIds,
+          });
+        } else {
+          await gqlCreateProduct({
+            name: form.name.trim(),
+            description: form.description.trim(),
+            price: Number(form.price),
+            categoryIds: form.categoryIds,
+          });
+        }
+        await loadProducts(false);
+        setForm({ name: "", description: "", price: "", categoryIds: [], editingId: null });
+        setUi((current) => ({ ...current, isModalOpen: false }));
+      } catch (err) {
+        setStatus({ connection: "online", error: err instanceof Error ? err.message : "Could not save product." });
+      } finally {
+        setUi((current) => ({ ...current, submitting: false }));
+      }
+      return;
+    }
+
     try {
       setUi((current) => ({ ...current, submitting: true }));
       setStatus({ connection: "online", error: "" });
@@ -147,6 +196,21 @@ export default function ProductPage() {
       setStatus({ connection: "online", error: "Admin permissions required to delete products." });
       return;
     }
+
+    if (apiMode === "graphql") {
+      try {
+        setUi((current) => ({ ...current, actionMenuId: null, actionMenuPosition: null, deletingId: id }));
+        setStatus({ connection: "online", error: "" });
+        await gqlDeleteProduct(id);
+        setProducts((current) => current.filter((product) => product.id !== id));
+      } catch (err) {
+        setStatus({ connection: "online", error: err instanceof Error ? err.message : "Could not delete product via GraphQL." });
+      } finally {
+        setUi((current) => ({ ...current, deletingId: null }));
+      }
+      return;
+    }
+
     try {
       setUi((current) => ({ ...current, actionMenuId: null, actionMenuPosition: null, deletingId: id }));
       setStatus({ connection: "online", error: "" });
@@ -200,15 +264,38 @@ export default function ProductPage() {
             <h1 className="text-4xl font-bold tracking-tight">Products</h1>
             <p className="mt-2 max-w-xl text-slate-600">Manage your product catalog and its category relationships.</p>
           </div>
-          {isAdmin ? (
-            <button
-              type="button"
-              className="w-full bg-[#111111] px-5 py-3 font-bold text-white shadow-md transition hover:bg-[#009688] sm:w-auto"
-              onClick={openAddProduct}
-            >
-              + Add product
-            </button>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs shadow-xs">
+              <button
+                type="button"
+                onClick={() => setApiMode("graphql")}
+                className={`rounded-md px-3 py-1.5 font-bold transition flex items-center gap-1.5 ${
+                  apiMode === "graphql" ? "bg-teal-600 text-white shadow-xs" : "text-slate-600 hover:text-black"
+                }`}
+              >
+                <span>GraphQL</span>
+                <span className="rounded bg-white/20 px-1 py-0.2 text-[9px]">CRUD</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setApiMode("rest")}
+                className={`rounded-md px-3 py-1.5 font-medium transition ${
+                  apiMode === "rest" ? "bg-black text-white" : "text-slate-600 hover:text-black"
+                }`}
+              >
+                REST API
+              </button>
+            </div>
+            {isAdmin ? (
+              <button
+                type="button"
+                className="w-full bg-[#111111] px-5 py-3 font-bold text-white shadow-md transition hover:bg-[#009688] sm:w-auto"
+                onClick={openAddProduct}
+              >
+                + Add product
+              </button>
+            ) : null}
+          </div>
         </header>
 
         <section className="border border-slate-200 bg-white p-5 sm:p-7 shadow-sm">

@@ -15,6 +15,15 @@ export default function Home() {
                     <span className="mx-2">+</span>
                     <Image className="pointer-events-none select-none" src="/images/fapi.webp" alt="FastAPI" width={100} height={100} />
                 </h1>
+
+                <div className="flex flex-wrap items-center justify-center gap-4 mt-4">
+                    <a
+                        href="/graphql"
+                        className="rounded-full bg-teal-500/20 border border-teal-500/50 px-6 py-2.5 text-sm font-bold text-teal-300 shadow-lg shadow-teal-500/20 transition hover:bg-teal-500/30 hover:scale-105"
+                    >
+                        Explore GraphQL CRUD Studio →
+                    </a>
+                </div>
             </div>
         </main>
     );

@@ -59,6 +59,16 @@ export default function Navbar() {
           >
             Users
           </Link>
+          <Link
+            href="/graphql"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${pathname === "/graphql" ? "bg-teal-950/80 text-teal-300 border border-teal-500/40" : "text-teal-400 hover:text-teal-300"
+              }`}
+          >
+            <span>GraphQL</span>
+            <span className="rounded bg-teal-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-teal-300 border border-teal-500/30">
+              CRUD
+            </span>
+          </Link>
         </div>
       </div>
 

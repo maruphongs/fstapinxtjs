@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import api_router
 from app.core.config import settings
 from app.core.database import init_db
+from app.graphql import graphql_router
 
 
 @asynccontextmanager
@@ -30,7 +31,12 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"message": "API is running"}
+    return {
+        "message": "API is running",
+        "graphql": "/graphql",
+        "docs": "/docs",
+    }
 
 
 app.include_router(api_router, prefix=settings.API_PREFIX)
+app.include_router(graphql_router, prefix="/graphql")

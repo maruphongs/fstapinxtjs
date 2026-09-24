@@ -2,11 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import { API_URL, AuthUser, authFetch, getUser } from "../lib/auth";
+import {
+  gqlCreateCategory,
+  gqlDeleteCategory,
+  gqlGetCategories,
+  gqlUpdateCategory,
+} from "../lib/graphql";
 
 type Product = { id: number; name: string; price: number };
 type Category = { id: number; name: string; products: Product[] };
 
 export default function CategoriesPage() {
+  const [apiMode, setApiMode] = useState<"graphql" | "rest">("graphql");
   const [user, setUser] = useState<AuthUser | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [name, setName] = useState("");
@@ -30,9 +37,14 @@ export default function CategoriesPage() {
   async function loadCategories() {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/categories`, { cache: "no-store" });
-      if (!response.ok) throw new Error("Could not load categories.");
-      setCategories(await response.json());
+      if (apiMode === "graphql") {
+        const data = await gqlGetCategories();
+        setCategories(data as Category[]);
+      } else {
+        const response = await fetch(`${API_URL}/categories`, { cache: "no-store" });
+        if (!response.ok) throw new Error("Could not load categories.");
+        setCategories(await response.json());
+      }
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load categories.");
@@ -43,7 +55,7 @@ export default function CategoriesPage() {
 
   useEffect(() => {
     void loadCategories();
-  }, []);
+  }, [apiMode]);
 
   useEffect(() => {
     if (editingId === null && !name && actionMenuId === null) return;
@@ -89,6 +101,26 @@ export default function CategoriesPage() {
     const trimmedName = name.trim();
     if (!trimmedName) return;
     const isCreating = editingId === null || editingId === -1;
+
+    if (apiMode === "graphql") {
+      try {
+        setSubmitting(true);
+        if (isCreating) {
+          await gqlCreateCategory(trimmedName);
+        } else {
+          await gqlUpdateCategory(editingId, trimmedName);
+        }
+        setName("");
+        setEditingId(null);
+        await loadCategories();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not save category via GraphQL.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
     try {
       setSubmitting(true);
       const response = await authFetch(`${API_URL}/categories${isCreating ? "" : `/${editingId}`}`, {
@@ -116,6 +148,19 @@ export default function CategoriesPage() {
       return;
     }
     if (!window.confirm(`Delete category "${category.name}"?`)) return;
+
+    if (apiMode === "graphql") {
+      try {
+        setActionMenuId(null);
+        setActionMenuPosition(null);
+        await gqlDeleteCategory(category.id);
+        setCategories((current) => current.filter((item) => item.id !== category.id));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not delete category via GraphQL.");
+      }
+      return;
+    }
+
     try {
       setActionMenuId(null);
       setActionMenuPosition(null);
@@ -182,15 +227,38 @@ export default function CategoriesPage() {
             <h2 className="text-2xl font-bold tracking-tight">Category collection</h2>
             <p className="mt-1 text-sm text-slate-500">{categories.length} {categories.length === 1 ? "category" : "categories"}</p>
           </div>
-          {isAdmin ? (
-            <button
-              type="button"
-              className="bg-[#111111] px-5 py-3 font-bold text-white shadow-md transition hover:bg-[#009688]"
-              onClick={openAddCategory}
-            >
-              + Add category
-            </button>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs shadow-xs">
+              <button
+                type="button"
+                onClick={() => setApiMode("graphql")}
+                className={`rounded-md px-3 py-1.5 font-bold transition flex items-center gap-1.5 ${
+                  apiMode === "graphql" ? "bg-teal-600 text-white shadow-xs" : "text-slate-600 hover:text-black"
+                }`}
+              >
+                <span>GraphQL</span>
+                <span className="rounded bg-white/20 px-1 py-0.2 text-[9px]">CRUD</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setApiMode("rest")}
+                className={`rounded-md px-3 py-1.5 font-medium transition ${
+                  apiMode === "rest" ? "bg-black text-white" : "text-slate-600 hover:text-black"
+                }`}
+              >
+                REST API
+              </button>
+            </div>
+            {isAdmin ? (
+              <button
+                type="button"
+                className="bg-[#111111] px-5 py-3 font-bold text-white shadow-md transition hover:bg-[#009688]"
+                onClick={openAddCategory}
+              >
+                + Add category
+              </button>
+            ) : null}
+          </div>
         </section>
 
         {error && <p className="mb-6 text-sm text-red-700 bg-red-50 p-3 border border-red-200 rounded" role="alert">{error}</p>}
