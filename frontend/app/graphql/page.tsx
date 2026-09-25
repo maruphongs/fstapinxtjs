@@ -608,11 +608,10 @@ export default function GraphQLPage() {
       {/* Toast Notification */}
       {notification && (
         <div
-          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl px-5 py-3 shadow-xl backdrop-blur-md transition-all ${
-            notification.type === "success"
-              ? "border border-teal-500/40 bg-teal-900/90 text-teal-100"
-              : "border border-rose-500/40 bg-rose-900/90 text-rose-100"
-          }`}
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl px-5 py-3 shadow-xl backdrop-blur-md transition-all ${notification.type === "success"
+            ? "border border-teal-500/40 bg-teal-900/90 text-teal-100"
+            : "border border-rose-500/40 bg-rose-900/90 text-rose-100"
+            }`}
         >
           <span className="text-lg">{notification.type === "success" ? "✓" : "⚠️"}</span>
           <p className="text-xs font-medium">{notification.message}</p>
@@ -659,9 +658,8 @@ export default function GraphQLPage() {
                   <span className="text-slate-500">Logged in as:</span>
                   <span className="font-bold text-slate-900">@{currentUser.username}</span>
                   <span
-                    className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
-                      isAdmin ? "bg-teal-100 text-teal-800" : "bg-slate-200 text-slate-700"
-                    }`}
+                    className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${isAdmin ? "bg-teal-100 text-teal-800" : "bg-slate-200 text-slate-700"
+                      }`}
                   >
                     {currentUser.role}
                   </span>
@@ -678,13 +676,12 @@ export default function GraphQLPage() {
           <div className="mt-6 flex flex-wrap gap-2 border-b border-slate-100 pb-1">
             <button
               onClick={() => setActiveTab("products")}
-              className={`flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 text-xs font-bold transition ${
-                activeTab === "products"
-                  ? "border-teal-500 text-teal-700 bg-teal-50/50"
-                  : "border-transparent text-slate-500 hover:text-slate-900"
-              }`}
+              className={`flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 text-xs font-bold transition ${activeTab === "products"
+                ? "border-teal-500 text-teal-700 bg-teal-50/50"
+                : "border-transparent text-slate-500 hover:text-slate-900"
+                }`}
             >
-              <span>Products CRUD</span>
+              <span>Products</span>
               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
                 {products.length}
               </span>
@@ -692,13 +689,12 @@ export default function GraphQLPage() {
 
             <button
               onClick={() => setActiveTab("categories")}
-              className={`flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 text-xs font-bold transition ${
-                activeTab === "categories"
-                  ? "border-teal-500 text-teal-700 bg-teal-50/50"
-                  : "border-transparent text-slate-500 hover:text-slate-900"
-              }`}
+              className={`flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 text-xs font-bold transition ${activeTab === "categories"
+                ? "border-teal-500 text-teal-700 bg-teal-50/50"
+                : "border-transparent text-slate-500 hover:text-slate-900"
+                }`}
             >
-              <span>Categories CRUD</span>
+              <span>Categories</span>
               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
                 {categories.length}
               </span>
@@ -706,13 +702,12 @@ export default function GraphQLPage() {
 
             <button
               onClick={() => setActiveTab("users")}
-              className={`flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 text-xs font-bold transition ${
-                activeTab === "users"
-                  ? "border-teal-500 text-teal-700 bg-teal-50/50"
-                  : "border-transparent text-slate-500 hover:text-slate-900"
-              }`}
+              className={`flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 text-xs font-bold transition ${activeTab === "users"
+                ? "border-teal-500 text-teal-700 bg-teal-50/50"
+                : "border-transparent text-slate-500 hover:text-slate-900"
+                }`}
             >
-              <span>Users CRUD</span>
+              <span>Users</span>
               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
                 {users.length}
               </span>
@@ -720,11 +715,10 @@ export default function GraphQLPage() {
 
             <button
               onClick={() => setActiveTab("explorer")}
-              className={`flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 text-xs font-bold transition ${
-                activeTab === "explorer"
-                  ? "border-teal-500 text-teal-700 bg-teal-50/50"
-                  : "border-transparent text-slate-500 hover:text-slate-900"
-              }`}
+              className={`flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 text-xs font-bold transition ${activeTab === "explorer"
+                ? "border-teal-500 text-teal-700 bg-teal-50/50"
+                : "border-transparent text-slate-500 hover:text-slate-900"
+                }`}
             >
               <span>Interactive Query Explorer</span>
               <span className="rounded bg-teal-500/20 px-1.5 py-0.2 text-[9px] font-bold text-teal-700">
@@ -1021,22 +1015,20 @@ export default function GraphQLPage() {
                               </td>
                               <td className="px-4 py-3">
                                 <span
-                                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                    u.role === "admin"
-                                      ? "bg-slate-900 text-teal-300"
-                                      : "bg-slate-100 text-slate-700"
-                                  }`}
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${u.role === "admin"
+                                    ? "bg-slate-900 text-teal-300"
+                                    : "bg-slate-100 text-slate-700"
+                                    }`}
                                 >
                                   {u.role}
                                 </span>
                               </td>
                               <td className="px-4 py-3">
                                 <span
-                                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                    u.is_active
-                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                      : "bg-rose-50 text-rose-700 border border-rose-200"
-                                  }`}
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${u.is_active
+                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                    : "bg-rose-50 text-rose-700 border border-rose-200"
+                                    }`}
                                 >
                                   {u.is_active ? "Active" : "Disabled"}
                                 </span>
@@ -1163,11 +1155,10 @@ export default function GraphQLPage() {
                       {explorerTiming !== null && (
                         <div className="flex items-center gap-2 text-[10px]">
                           <span
-                            className={`rounded px-1.5 py-0.5 font-bold ${
-                              explorerStatus === "success"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-rose-100 text-rose-800"
-                            }`}
+                            className={`rounded px-1.5 py-0.5 font-bold ${explorerStatus === "success"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-rose-100 text-rose-800"
+                              }`}
                           >
                             {explorerStatus === "success" ? "200 OK" : "ERROR"}
                           </span>
@@ -1205,11 +1196,10 @@ export default function GraphQLPage() {
                     <span className="text-[10px] font-bold text-slate-400 uppercase">Operation:</span>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span
-                        className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
-                          lastOp.type === "mutation"
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-teal-100 text-teal-800"
-                        }`}
+                        className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${lastOp.type === "mutation"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-teal-100 text-teal-800"
+                          }`}
                       >
                         {lastOp.type}
                       </span>
@@ -1248,31 +1238,6 @@ export default function GraphQLPage() {
                   <p className="mt-1 text-[11px]">Perform a CRUD action or run a query to inspect live GraphQL payloads.</p>
                 </div>
               )}
-            </div>
-
-            {/* Architecture Overview */}
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 pb-2 border-b border-slate-100">
-                GraphQL Architecture
-              </h3>
-              <ul className="mt-3 space-y-2 text-xs text-slate-600">
-                <li className="flex items-start gap-2">
-                  <span className="text-teal-600 font-bold">✓</span>
-                  <span><strong>Strawberry GraphQL:</strong> Type-safe Python engine running on FastAPI.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-teal-600 font-bold">✓</span>
-                  <span><strong>Full CRUD:</strong> Queries and mutations for Products, Categories, Users.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-teal-600 font-bold">✓</span>
-                  <span><strong>JWT Authentication:</strong> Context getter validates Bearer tokens on protected resolvers.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-teal-600 font-bold">✓</span>
-                  <span><strong>GraphiQL IDE:</strong> Live interactive browser schema documentation.</span>
-                </li>
-              </ul>
             </div>
           </div>
         </div>
@@ -1356,11 +1321,10 @@ export default function GraphQLPage() {
                             setProductCategoryIds([...productCategoryIds, cat.id]);
                           }
                         }}
-                        className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition ${
-                          isChecked
-                            ? "bg-teal-600 text-white"
-                            : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
-                        }`}
+                        className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition ${isChecked
+                          ? "bg-teal-600 text-white"
+                          : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+                          }`}
                       >
                         {isChecked ? `✓ ${cat.name}` : `+ ${cat.name}`}
                       </button>

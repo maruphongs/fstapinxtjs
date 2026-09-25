@@ -186,19 +186,16 @@ export default function UsersPage() {
               <button
                 type="button"
                 onClick={() => setApiMode("graphql")}
-                className={`rounded-md px-3 py-1.5 font-bold transition flex items-center gap-1.5 ${
-                  apiMode === "graphql" ? "bg-teal-600 text-white shadow-xs" : "text-slate-600 hover:text-black"
-                }`}
+                className={`px-3 py-1.5 font-bold transition flex items-center gap-1.5 ${apiMode === "graphql" ? "bg-teal-600 text-white shadow-xs" : "text-slate-600 hover:text-black"
+                  }`}
               >
                 <span>GraphQL</span>
-                <span className="rounded bg-white/20 px-1 py-0.2 text-[9px]">CRUD</span>
               </button>
               <button
                 type="button"
                 onClick={() => setApiMode("rest")}
-                className={`rounded-md px-3 py-1.5 font-medium transition ${
-                  apiMode === "rest" ? "bg-black text-white" : "text-slate-600 hover:text-black"
-                }`}
+                className={`px-3 py-1.5 font-medium transition ${apiMode === "rest" ? "bg-black text-white" : "text-slate-600 hover:text-black"
+                  }`}
               >
                 REST API
               </button>

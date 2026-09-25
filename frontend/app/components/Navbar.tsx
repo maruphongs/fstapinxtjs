@@ -40,34 +40,27 @@ export default function Navbar() {
         <div className="flex items-center space-x-1 sm:px-4 group relative">
           <Link
             href="/products"
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${pathname === "/products" ? "bg-black text-white" : "text-white hover:text-teal-500"
-              }`}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${pathname === "/products" ? "bg-black text-white" : "text-white hover:text-teal-500"}`}
           >
             Products
           </Link>
           <Link
             href="/categories"
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${pathname === "/categories" ? "bg-black text-white" : "text-white hover:text-teal-500"
-              }`}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${pathname === "/categories" ? "bg-black text-white" : "text-white hover:text-teal-500"}`}
           >
             Categories
           </Link>
           <Link
             href="/users"
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${pathname === "/users" ? "bg-black text-white" : "text-white hover:text-teal-500"
-              }`}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${pathname === "/users" ? "bg-black text-white" : "text-white hover:text-teal-500"}`}
           >
             Users
           </Link>
           <Link
             href="/graphql"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${pathname === "/graphql" ? "bg-teal-950/80 text-teal-300 border border-teal-500/40" : "text-teal-400 hover:text-teal-300"
-              }`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${pathname === "/graphql" ? "bg-black text-white" : "text-white hover:text-teal-500"}`}
           >
             <span>GraphQL</span>
-            <span className="rounded bg-teal-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-teal-300 border border-teal-500/30">
-              CRUD
-            </span>
           </Link>
         </div>
       </div>
