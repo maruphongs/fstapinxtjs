@@ -1,3 +1,4 @@
-from app.api.routers import auth, categories, products, users
+from app.api.routers import auth, categories, chat, products, users
 
-__all__ = ["auth", "categories", "products", "users"]
+__all__ = ["auth", "categories", "chat", "products", "users"]
+
