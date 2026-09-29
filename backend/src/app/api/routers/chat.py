@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime, timezone
 import json
 import logging
+import random
 from typing import Any
 import uuid
 
@@ -15,9 +16,7 @@ from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(
-    tags=["Chatbot"],
-)
+router = APIRouter(tags=["Chatbot"])
 
 
 class ChatConnectionManager:
@@ -38,6 +37,15 @@ class ChatConnectionManager:
 
 manager = ChatConnectionManager()
 
+SILLY_SUGGESTIONS = [
+    "🛍️ Gib products",
+    "📦 Show buckets",
+    "🧠 Big brain stats",
+    "💣 DO NOT CLICK",
+    "🦆 Quack",
+    "⚡ GraphQL magic",
+]
+
 
 def get_welcome_payload() -> dict[str, Any]:
     return {
@@ -45,66 +53,91 @@ def get_welcome_payload() -> dict[str, Any]:
         "sender": "bot",
         "type": "welcome",
         "text": (
-            "👋 **Welcome to the UniWeb Assistant!**\n\n"
-            "I'm your real-time assistant connected via WebSocket. You can ask me to search products, "
-            "browse categories, get database stats, or learn how to use the GraphQL API."
+            "🤪 **HONK HONK! BEEP BOOP!** 👋\n\n"
+            "I am **SillyBot**, your 1-brain-cell assistant running on pure chaos and WebSocket speed! ⚡\n\n"
+            "Ask me for shiny loot, secret buckets, or click one of my silly buttons below:"
         ),
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "suggestions": [
-            "📦 Show all products",
-            "🏷️ List categories",
-            "📊 System stats",
-            "⚡ GraphQL guide",
-            "❓ Help & commands",
-        ],
+        "suggestions": SILLY_SUGGESTIONS,
     }
 
 
 def handle_chat_query(raw_query: str) -> dict[str, Any]:
-    """Processes user query and queries the database to return assistant answers."""
+    """Simple and silly query handler that queries the database with humorous responses."""
     query = raw_query.strip().lower()
     timestamp = datetime.now(timezone.utc).isoformat()
     msg_id = str(uuid.uuid4())
 
-    # 1. Help & commands
-    if query in ["/help", "help", "commands", "/commands", "what can you do"]:
+    # 1. Secret / Silly Easter Eggs
+    if any(k in query for k in ["do not click", "bomb", "explode", "kaboom", "dont click"]):
+        return {
+            "id": msg_id,
+            "sender": "bot",
+            "type": "text",
+            "text": (
+                "💥 **KABOOOOOOOMMMMM!!!** 💥\n\n"
+                "*(...Wait, nothing actually broke!)* 😅\n\n"
+                "Why did you click it hooman?! Now my circuits are sweating! 👁️👄👁️"
+            ),
+            "timestamp": timestamp,
+            "suggestions": ["🛍️ Gib products", "🦆 Quack", "🧠 Big brain stats"],
+        }
+
+    if any(k in query for k in ["quack", "duck", "rubber duck"]):
+        return {
+            "id": msg_id,
+            "sender": "bot",
+            "type": "text",
+            "text": (
+                "🦆 **QUACK QUACK QUACK!!** 🦆\n\n"
+                "*A wild rubber duck appears! All bugs in your code are temporarily terrified and hiding.*"
+            ),
+            "timestamp": timestamp,
+            "suggestions": ["🛍️ Gib products", "📦 Show buckets", "💣 DO NOT CLICK"],
+        }
+
+    # 2. Help
+    if any(query.startswith(k) for k in ["/help", "help", "commands", "/commands", "what can you do"]):
         return {
             "id": msg_id,
             "sender": "bot",
             "type": "help",
             "text": (
-                "### 🤖 UniWeb Assistant Commands\n\n"
-                "Here are some things you can ask me:\n"
-                "- **`/products`** or **`search <term>`**: Find products in the catalog.\n"
-                "- **`/categories`**: Browse all available product categories.\n"
-                "- **`category <name>`**: View products in a specific category.\n"
-                "- **`/stats`**: View total counts for products, categories, and registered users.\n"
-                "- **`/graphql`**: Learn how to execute GraphQL queries and mutations.\n"
-                "- **`/clear`**: Clear current chat history in the widget.\n"
-                "- **`who are you`**: About this assistant."
+                "🤖 **SillyBot 3000 User Manual:**\n\n"
+                "- Say **`products`** or **`loot`**: I show you shiny things to buy!\n"
+                "- Say **`categories`** or **`buckets`**: I show where things are stored!\n"
+                "- Say **`stats`**: I show you big brain database numbers!\n"
+                "- Say **`quack`**: For instant emotional support 🦆\n"
+                "- Type **`/clear`**: If I said something weird and you want a fresh start!"
             ),
             "timestamp": timestamp,
-            "suggestions": ["📦 Show all products", "🏷️ List categories", "📊 System stats"],
+            "suggestions": ["🛍️ Gib products", "📦 Show buckets", "🧠 Big brain stats"],
         }
 
-    # 2. Stats
-    if query in ["/stats", "stats", "system stats", "statistics", "count"]:
+    # 3. Stats / Big Brain
+    if any(k in query for k in ["stats", "big brain", "statistics", "count", "number"]):
         with SessionLocal() as db:
             prod_count = db.scalar(select(func.count(Product.id))) or 0
             cat_count = db.scalar(select(func.count(Category.id))) or 0
             user_count = db.scalar(select(func.count(User.id))) or 0
+
+        funny_remarks = [
+            "🔥 Database on fire: 0% (we good!)",
+            "☕ Dev coffee level: 9000% critical",
+            "🐹 Hamster spinning the server wheel: Tired but running",
+        ]
 
         return {
             "id": msg_id,
             "sender": "bot",
             "type": "stats",
             "text": (
-                f"### 📊 System Overview\n\n"
-                f"- **Products in catalog**: {prod_count}\n"
-                f"- **Categories**: {cat_count}\n"
-                f"- **Registered Users**: {user_count}\n"
-                f"- **Protocol**: WebSocket (FastAPI backend + Next.js client)\n"
-                f"- **Status**: All systems operational 🚀"
+                "🧠 **BIG BRAIN FLEX TIME!** 📊\n\n"
+                f"- 📦 **{prod_count} Shiny Products** ready to be purchased\n"
+                f"- 🏷️ **{cat_count} Mystery Buckets** (categories)\n"
+                f"- 👤 **{user_count} Cool Humans** in the system\n"
+                f"- {random.choice(funny_remarks)}\n\n"
+                "Everything is vibing smoothly over WebSockets! 😎"
             ),
             "data": {
                 "productsCount": prod_count,
@@ -112,259 +145,173 @@ def handle_chat_query(raw_query: str) -> dict[str, Any]:
                 "usersCount": user_count,
             },
             "timestamp": timestamp,
-            "suggestions": ["📦 Show all products", "🏷️ List categories"],
+            "suggestions": ["🛍️ Gib products", "📦 Show buckets", "🦆 Quack"],
         }
 
-    # 3. GraphQL guide
-    if query in ["/graphql", "graphql", "how to use graphql", "graphql api"]:
+    # 4. GraphQL guide
+    if "graphql" in query:
         return {
             "id": msg_id,
             "sender": "bot",
             "type": "graphql",
             "text": (
-                "### ⚡ GraphQL CRUD Studio\n\n"
-                "You can query or mutate products, categories, and users at `/graphql`!\n\n"
-                "**Sample Query:**\n"
+                "⚡ **Oooooh, GraphQL magic!** 🧙‍♂️\n\n"
+                "Head over to `/graphql` to zap the database with queries like:\n"
                 "```graphql\n"
-                "query GetProducts {\n"
-                "  products {\n"
-                "    id\n"
-                "    name\n"
-                "    price\n"
-                "    categories { id name }\n"
-                "  }\n"
+                "query {\n"
+                "  products { id name price }\n"
                 "}\n"
-                "```\n\n"
-                "Visit the **GraphQL** tab in the navbar to test live queries in the interactive studio."
+                "```\n"
+                "Super fast, no carbs, 100% organic data fetching!"
             ),
             "timestamp": timestamp,
-            "suggestions": ["📦 Show all products", "📊 System stats"],
+            "suggestions": ["🛍️ Gib products", "🧠 Big brain stats"],
         }
 
-    # 4. Products query / search
-    if (
-        query.startswith("/products")
-        or query.startswith("products")
-        or query.startswith("search ")
-        or query.startswith("find ")
-        or "show all products" in query
-        or "list products" in query
-        or "what products" in query
-    ):
-        # Extract search keyword if any
-        search_term = ""
-        if query.startswith("/products"):
-            search_term = query[len("/products") :].strip()
-        elif query.startswith("products"):
-            search_term = query[len("products") :].strip()
-        elif query.startswith("search "):
-            search_term = query[len("search ") :].strip()
-        elif query.startswith("find "):
-            search_term = query[len("find ") :].strip()
+    # 5. Products / Loot Query
+    if any(k in query for k in ["product", "loot", "item", "buy", "shop"]):
+        # Remove common noise words to extract search keyword
+        stop_words = {"show", "all", "list", "gib", "the", "products", "product", "items", "item", "/products", "search", "find", "me"}
+        tokens = [w for w in query.split() if w not in stop_words]
+        search_kw = " ".join(tokens).strip()
 
         with SessionLocal() as db:
             stmt = select(Product)
-            if search_term and search_term not in ["all", "list", "show"]:
+            if search_kw:
                 stmt = stmt.where(
                     or_(
-                        Product.name.ilike(f"%{search_term}%"),
-                        Product.description.ilike(f"%{search_term}%"),
+                        Product.name.ilike(f"%{search_kw}%"),
+                        Product.description.ilike(f"%{search_kw}%"),
                     )
                 )
-            stmt = stmt.limit(20)
+            stmt = stmt.limit(10)
             products = db.scalars(stmt).all()
 
             if not products:
-                msg = f"No products found matching **'{search_term}'**." if search_term else "There are currently no products in the catalog."
                 return {
                     "id": msg_id,
                     "sender": "bot",
                     "type": "products",
-                    "text": f"{msg}\n\nTry another keyword or view all categories.",
+                    "text": f"😭 **Oh no! No loot found for '{search_kw}'!**\nMaybe the goblins ate them? Try searching something else!",
                     "data": {"products": []},
                     "timestamp": timestamp,
-                    "suggestions": ["🏷️ List categories", "📦 Show all products"],
+                    "suggestions": ["📦 Show buckets", "🛍️ Gib products"],
                 }
 
-            items_data = []
-            for p in products:
-                cat_names = [c.name for c in p.categories]
-                items_data.append({
-                    "id": p.id,
-                    "name": p.name,
-                    "price": p.price,
-                    "description": p.description,
-                    "categories": cat_names,
-                })
 
-            header_text = f"Found {len(items_data)} matching product(s):" if search_term else f"Here are {len(items_data)} products in the store:"
-            return {
-                "id": msg_id,
-                "sender": "bot",
-                "type": "products",
-                "text": f"### 📦 {header_text}\n\nClick any item or browse the `/products` page for full management.",
-                "data": {"products": items_data},
-                "timestamp": timestamp,
-                "suggestions": ["🏷️ List categories", "📊 System stats"],
-            }
-
-    # 5. Specific Category filter
-    if query.startswith("category ") or query.startswith("/category ") or "in category" in query:
-        cat_search = ""
-        if query.startswith("/category "):
-            cat_search = query[len("/category ") :].strip()
-        elif query.startswith("category "):
-            cat_search = query[len("category ") :].strip()
-        elif "in category" in query:
-            cat_search = query.split("in category")[-1].strip()
-
-        with SessionLocal() as db:
-            stmt = select(Category).where(Category.name.ilike(f"%{cat_search}%"))
-            cat = db.scalars(stmt).first()
-
-            if not cat:
-                return {
-                    "id": msg_id,
-                    "sender": "bot",
-                    "type": "text",
-                    "text": f"Category matching **'{cat_search}'** not found. Type `/categories` to see all available categories.",
-                    "timestamp": timestamp,
-                    "suggestions": ["🏷️ List categories", "📦 Show all products"],
-                }
-
-            items_data = []
-            for p in cat.products:
-                items_data.append({
+            items = [
+                {
                     "id": p.id,
                     "name": p.name,
                     "price": p.price,
                     "description": p.description,
                     "categories": [c.name for c in p.categories],
-                })
+                }
+                for p in products
+            ]
 
             return {
                 "id": msg_id,
                 "sender": "bot",
                 "type": "products",
-                "text": f"### 🏷️ Category: **{cat.name}**\n\nFound {len(items_data)} product(s) in this category:",
-                "data": {"products": items_data, "category": cat.name},
+                "text": f"🎉 **TA-DA! Look at this fine loot! ({len(items)} items)** 🛍️\nBuy them before my creator raises the prices! 💸",
+                "data": {"products": items},
                 "timestamp": timestamp,
-                "suggestions": ["🏷️ Other categories", "📊 System stats"],
+                "suggestions": ["📦 Show buckets", "🧠 Big brain stats", "🦆 Quack"],
             }
 
-    # 6. Categories query
-    if (
-        query in ["/categories", "categories", "list categories", "show categories"]
-        or "categories" in query
-        or "list category" in query
-    ):
+    # 6. Categories / Buckets Query
+    if any(k in query for k in ["categor", "bucket"]):
         with SessionLocal() as db:
-            categories = db.scalars(select(Category).order_by(Category.name)).all()
-
-            if not categories:
+            cats = db.scalars(select(Category).order_by(Category.name)).all()
+            if not cats:
                 return {
                     "id": msg_id,
                     "sender": "bot",
                     "type": "categories",
-                    "text": "There are currently no categories created. Admins can create new categories in the `/categories` page.",
+                    "text": "📭 Empty buckets! No categories exist yet. Admins, feed me categories!",
                     "data": {"categories": []},
                     "timestamp": timestamp,
-                    "suggestions": ["📦 Show all products", "📊 System stats"],
+                    "suggestions": ["🛍️ Gib products"],
                 }
 
-            cats_data = [
+            cat_items = [
                 {"id": c.id, "name": c.name, "productCount": len(c.products)}
-                for c in categories
+                for c in cats
             ]
 
             return {
                 "id": msg_id,
                 "sender": "bot",
                 "type": "categories",
-                "text": f"### 🏷️ Product Categories ({len(cats_data)})\n\nClick on any category to view its associated products:",
-                "data": {"categories": cats_data},
+                "text": f"🗃️ **Behold! Our {len(cat_items)} magical sorting buckets!**\nClick one to peek inside:",
+                "data": {"categories": cat_items},
                 "timestamp": timestamp,
-                "suggestions": [f"Category {c['name']}" for c in cats_data[:3]] + ["📦 Show all products"],
+                "suggestions": [f"Category {c['name']}" for c in cat_items[:3]] + ["🛍️ Gib products"],
             }
 
     # 7. Greetings
-    if any(query.startswith(g) for g in ["hi", "hello", "hey", "good morning", "good afternoon", "greetings", "yo"]):
+    if any(query.startswith(g) for g in ["hi", "hello", "hey", "henlo", "yo", "sup", "greetings"]):
         return {
             "id": msg_id,
             "sender": "bot",
             "type": "text",
-            "text": (
-                "👋 Hello! I'm here to assist you with the product catalog, categories, and system features. "
-                "What would you like to explore today?"
-            ),
+            "text": "👋 **HENLO HOOMAN!** 🐾\nI was just taking a digital nap. What shiny things do you seek?",
             "timestamp": timestamp,
-            "suggestions": ["📦 Show all products", "🏷️ List categories", "📊 System stats", "⚡ GraphQL guide"],
+            "suggestions": ["🛍️ Gib products", "📦 Show buckets", "🧠 Big brain stats", "💣 DO NOT CLICK"],
         }
 
-    # 8. About / Identity
-    if "who are you" in query or "what are you" in query or "about" in query:
+    # 8. Who are you
+    if any(k in query for k in ["who are you", "what are you", "who u", "about"]):
         return {
             "id": msg_id,
             "sender": "bot",
             "type": "text",
-            "text": (
-                "🤖 I'm the **UniWeb Assistant**, built with FastAPI WebSocket in Python and React on the frontend. "
-                "I provide instant real-time answers about your store catalog, categories, and developer tools."
-            ),
+            "text": "🤖 I am **SillyBot 3000**! Born from FastAPI, WebSocket-powered, and 0% artificial intelligence, 100% silly vibes! 🤪",
             "timestamp": timestamp,
-            "suggestions": ["📦 Show all products", "📊 System stats", "❓ Help & commands"],
+            "suggestions": ["🛍️ Gib products", "🦆 Quack", "🧠 Big brain stats"],
         }
 
-    # 9. Fallback general response
+    # 9. Silly Fallback
+    silly_replies = [
+        f"🤔 *scratches metal noggin*\n\nMy single brain cell didn't quite get *\"{raw_query}\"*, but I can fetch you shiny products or funny stats!",
+        f"👀 *beep boop honk*\n\nDid you say *\"{raw_query}\"* or did a cat walk across your keyboard? Try clicking a button below!",
+        f"🤪 *spinning in circles*\n\nI don't know what *\"{raw_query}\"* means, but I do know our database is full of awesome loot!",
+    ]
     return {
         "id": msg_id,
         "sender": "bot",
         "type": "text",
-        "text": (
-            f"I received: *\"{raw_query}\"*\n\n"
-            "I can help you search products, list categories, check system stats, or explain GraphQL! "
-            "Try asking **\"Show all products\"**, **\"List categories\"**, or type **`/help`** for commands."
-        ),
+        "text": random.choice(silly_replies),
         "timestamp": timestamp,
-        "suggestions": ["📦 Show all products", "🏷️ List categories", "📊 System stats", "❓ Help & commands"],
+        "suggestions": ["🛍️ Gib products", "📦 Show buckets", "🧠 Big brain stats", "🦆 Quack"],
     }
 
 
 @router.get("/chat/status")
 def chat_status():
-    """Returns the current status of the WebSocket chat service."""
+    """Returns status of the silly WebSocket chat service."""
     return {
         "status": "online",
+        "bot_name": "SillyBot 3000",
         "active_connections": len(manager.active_connections),
-        "protocol": "websocket",
-        "endpoints": ["/ws/chat", "/chat/ws"],
+        "mood": "very silly 🤪",
     }
 
 
 @router.websocket("/ws/chat")
 @router.websocket("/chat/ws")
 async def chat_websocket_endpoint(websocket: WebSocket):
-    """
-    WebSocket endpoint for bidirectional real-time chatbot communication.
-    Supports greeting on connect, typing indicators, structured product/category replies,
-    and graceful error/disconnect recovery.
-    """
+    """Silly real-time WebSocket chatbot endpoint."""
     await manager.connect(websocket)
     try:
-        # Send initial welcome greeting
         await manager.send_json(websocket, get_welcome_payload())
 
         while True:
-            # Receive text or JSON message from client
             raw_data = await websocket.receive_text()
-            user_text = ""
-
             try:
                 parsed = json.loads(raw_data)
-                if isinstance(parsed, dict):
-                    user_text = parsed.get("text", "")
-                else:
-                    user_text = str(parsed)
+                user_text = parsed.get("text", "") if isinstance(parsed, dict) else str(parsed)
             except json.JSONDecodeError:
                 user_text = raw_data
 
@@ -372,30 +319,17 @@ async def chat_websocket_endpoint(websocket: WebSocket):
             if not user_text:
                 continue
 
-            # Echo typing state
-            await manager.send_json(websocket, {
-                "type": "typing",
-                "isTyping": True,
-            })
+            # Quick typing bounce
+            await manager.send_json(websocket, {"type": "typing", "isTyping": True})
+            await asyncio.sleep(0.12)
 
-            # Small async yield to feel natural and prevent CPU hogging
-            await asyncio.sleep(0.15)
-
-            # Process query
             response = handle_chat_query(user_text)
 
-            # Send typing off
-            await manager.send_json(websocket, {
-                "type": "typing",
-                "isTyping": False,
-            })
-
-            # Send assistant reply
+            await manager.send_json(websocket, {"type": "typing", "isTyping": False})
             await manager.send_json(websocket, response)
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        logger.info("WebSocket chat client disconnected normally.")
     except Exception as e:
         logger.error(f"WebSocket error: {e}", exc_info=True)
         manager.disconnect(websocket)
