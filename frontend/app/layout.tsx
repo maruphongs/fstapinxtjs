@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import Navbar from "./components/Navbar";
+import Chatbot from "./components/Chatbot";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,7 +29,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <div className="flex-1 flex flex-col w-full">
           {children}
         </div>
+        <Chatbot />
       </body>
     </html>
   );
 }
+
