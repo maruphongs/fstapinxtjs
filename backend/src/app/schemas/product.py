@@ -7,6 +7,7 @@ class ProductBase(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     description: str = Field(default="")
     price: float = Field(ge=0)
+    thumbnail: str | None = None
 
 
 class ProductCreate(ProductBase):
@@ -17,6 +18,7 @@ class ProductUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = None
     price: float | None = Field(default=None, ge=0)
+    thumbnail: str | None = None
     category_ids: list[int] | None = None
 
 
@@ -27,6 +29,7 @@ class ProductResponse(BaseModel):
     name: str
     description: str
     price: float
+    thumbnail: str | None = None
     categories: list[CategorySummary] = Field(default_factory=list)
 
 

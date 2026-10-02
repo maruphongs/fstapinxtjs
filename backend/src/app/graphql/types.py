@@ -29,6 +29,7 @@ class ProductType:
     name: str
     description: str
     price: float
+    thumbnail: Optional[str] = None
 
     @classmethod
     def from_db(cls, db_p: DBProduct) -> "ProductType":
@@ -37,6 +38,7 @@ class ProductType:
             name=db_p.name,
             description=db_p.description,
             price=db_p.price,
+            thumbnail=getattr(db_p, "thumbnail", None),
         )
         setattr(instance, "_db_categories", getattr(db_p, "categories", []))
         return instance
@@ -78,6 +80,7 @@ class ProductCreateInput:
     name: str
     description: str
     price: float
+    thumbnail: Optional[str] = None
     category_ids: Optional[list[int]] = None
 
 
@@ -86,6 +89,7 @@ class ProductUpdateInput:
     name: Optional[str] = None
     description: Optional[str] = None
     price: Optional[float] = None
+    thumbnail: Optional[str] = None
     category_ids: Optional[list[int]] = None
 
 

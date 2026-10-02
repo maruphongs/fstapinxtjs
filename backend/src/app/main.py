@@ -3,6 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from fastapi.staticfiles import StaticFiles
+
 from app.api import api_router
 from app.core.config import settings
 from app.core.database import init_db
@@ -11,6 +13,7 @@ from app.graphql import graphql_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    settings.THUMBNAIL_DIR.mkdir(parents=True, exist_ok=True)
     init_db()
     yield
 
@@ -40,3 +43,6 @@ async def root():
 
 app.include_router(api_router, prefix=settings.API_PREFIX)
 app.include_router(graphql_router, prefix="/graphql")
+
+settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(settings.UPLOAD_DIR)), name="uploads")

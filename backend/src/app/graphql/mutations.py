@@ -40,6 +40,7 @@ class Mutation:
             name=input.name,
             description=input.description,
             price=input.price,
+            thumbnail=input.thumbnail,
             category_ids=input.category_ids or [],
         )
         created = crud_product.create_product(db, product_in)
@@ -63,6 +64,7 @@ class Mutation:
             name=input.name,
             description=input.description,
             price=input.price,
+            thumbnail=input.thumbnail,
             category_ids=input.category_ids,
         )
         updated = crud_product.update_product(db, product, product_in)

@@ -10,6 +10,8 @@ class Settings(BaseModel):
     # Path to database.db inside backend directory
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent.parent
     DATABASE_PATH: Path = BASE_DIR / "database.db"
+    UPLOAD_DIR: Path = BASE_DIR / "uploads"
+    THUMBNAIL_DIR: Path = BASE_DIR / "uploads" / "thumbnails"
     
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:

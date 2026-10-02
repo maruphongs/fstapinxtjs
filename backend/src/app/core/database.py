@@ -78,6 +78,15 @@ def init_db() -> None:
         if "username" not in existing_cols or "role" not in existing_cols:
             cast(Table, User.__table__).drop(bind=engine)
 
+    # Check if existing products table needs thumbnail column
+    if inspector.has_table("products"):
+        product_cols = {col["name"] for col in inspector.get_columns("products")}
+        if "thumbnail" not in product_cols:
+            from sqlalchemy import text
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE products ADD COLUMN thumbnail VARCHAR"))
+                conn.commit()
+
     Base.metadata.create_all(bind=engine)
 
     # Seed default users

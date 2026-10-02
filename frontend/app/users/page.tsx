@@ -9,17 +9,10 @@ import {
   getUsers,
   updateUser,
 } from "../lib/auth";
-import {
-  gqlCreateUser,
-  gqlDeleteUser,
-  gqlGetUsers,
-  gqlUpdateUser,
-} from "../lib/graphql";
 
 type ConnectionStatus = "checking" | "online" | "offline";
 
 export default function UsersPage() {
-  const [apiMode, setApiMode] = useState<"graphql" | "rest">("graphql");
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +47,7 @@ export default function UsersPage() {
   async function loadUsers(showLoading = false) {
     try {
       if (showLoading) setLoading(true);
-      const data = apiMode === "graphql" ? await gqlGetUsers() : await getUsers();
+      const data = await getUsers();
       setUsers(data);
       setStatus({ connection: "online", error: "" });
     } catch (err) {
@@ -67,7 +60,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     void loadUsers(true);
-  }, [currentUser, apiMode]);
+  }, [currentUser]);
 
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
@@ -89,19 +82,11 @@ export default function UsersPage() {
     setModalError("");
     setModalSubmitting(true);
     try {
-      if (apiMode === "graphql") {
-        await gqlCreateUser({
-          username: newUsername.trim(),
-          password: newPassword,
-          role: newRole,
-        });
-      } else {
-        await createUser({
-          username: newUsername.trim(),
-          password: newPassword,
-          role: newRole,
-        });
-      }
+      await createUser({
+        username: newUsername.trim(),
+        password: newPassword,
+        role: newRole,
+      });
       setIsAddModalOpen(false);
       setNewUsername("");
       setNewPassword("");
@@ -118,11 +103,7 @@ export default function UsersPage() {
     if (!isAdmin || actionLoadingId !== null) return;
     setActionLoadingId(targetUser.id);
     try {
-      if (apiMode === "graphql") {
-        await gqlUpdateUser(targetUser.id, { isActive: !targetUser.is_active });
-      } else {
-        await updateUser(targetUser.id, { is_active: !targetUser.is_active });
-      }
+      await updateUser(targetUser.id, { is_active: !targetUser.is_active });
       await loadUsers();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to update user status.");
@@ -136,11 +117,7 @@ export default function UsersPage() {
     const newRoleValue = targetUser.role === "admin" ? "user" : "admin";
     setActionLoadingId(targetUser.id);
     try {
-      if (apiMode === "graphql") {
-        await gqlUpdateUser(targetUser.id, { role: newRoleValue });
-      } else {
-        await updateUser(targetUser.id, { role: newRoleValue });
-      }
+      await updateUser(targetUser.id, { role: newRoleValue });
       await loadUsers();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to update user role.");
@@ -153,11 +130,7 @@ export default function UsersPage() {
     if (!isAdmin || actionLoadingId !== null) return;
     setActionLoadingId(targetUserId);
     try {
-      if (apiMode === "graphql") {
-        await gqlDeleteUser(targetUserId);
-      } else {
-        await deleteUser(targetUserId);
-      }
+      await deleteUser(targetUserId);
       setDeleteConfirmId(null);
       await loadUsers();
     } catch (err) {
@@ -181,25 +154,7 @@ export default function UsersPage() {
             <h2 className="text-2xl font-bold tracking-tight">User collection</h2>
             <p className="mt-1 text-sm text-slate-500">{stats.total} {stats.total === 1 ? "user" : "users"}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs shadow-xs">
-              <button
-                type="button"
-                onClick={() => setApiMode("graphql")}
-                className={`px-3 py-1.5 font-bold transition flex items-center gap-1.5 ${apiMode === "graphql" ? "bg-teal-600 text-white shadow-xs" : "text-slate-600 hover:text-black"
-                  }`}
-              >
-                <span>GraphQL</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setApiMode("rest")}
-                className={`px-3 py-1.5 font-medium transition ${apiMode === "rest" ? "bg-black text-white" : "text-slate-600 hover:text-black"
-                  }`}
-              >
-                REST API
-              </button>
-            </div>
+          <div>
             {isAdmin ? (
               <button
                 type="button"

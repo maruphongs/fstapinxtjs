@@ -22,3 +22,4 @@ class ProductSummary(BaseModel):
     id: int
     name: str
     price: float
+    thumbnail: str | None = None

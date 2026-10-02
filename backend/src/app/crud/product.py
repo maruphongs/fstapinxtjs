@@ -22,6 +22,7 @@ def create_product(db: Session, product_in: ProductCreate) -> Product:
         name=product_in.name,
         description=product_in.description,
         price=product_in.price,
+        thumbnail=product_in.thumbnail,
     )
     if product_in.category_ids:
         categories = db.scalars(
@@ -42,6 +43,8 @@ def update_product(db: Session, product: Product, product_in: ProductUpdate) -> 
         product.description = product_in.description
     if product_in.price is not None:
         product.price = product_in.price
+    if product_in.thumbnail is not None:
+        product.thumbnail = product_in.thumbnail
 
     if product_in.category_ids is not None:
         categories = db.scalars(
@@ -49,6 +52,13 @@ def update_product(db: Session, product: Product, product_in: ProductUpdate) -> 
         ).all()
         product.categories = list(categories)
 
+    db.commit()
+    db.refresh(product)
+    return product
+
+
+def update_product_thumbnail(db: Session, product: Product, thumbnail: str | None) -> Product:
+    product.thumbnail = thumbnail
     db.commit()
     db.refresh(product)
     return product
