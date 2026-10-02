@@ -28,6 +28,9 @@ export default function ProductPage() {
   });
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [removeThumbnail, setRemoveThumbnail] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [ui, setUi] = useState({
     isModalOpen: false,
     actionMenuId: null as number | null,
@@ -113,7 +116,7 @@ export default function ProductPage() {
       const button = actionButtonRefs.current[ui.actionMenuId!];
       if (!button) return;
       const bounds = button.getBoundingClientRect();
-      const menuHeight = 88;
+      const menuHeight = 110;
       setUi((current) => ({
         ...current,
         actionMenuPosition: {
@@ -176,12 +179,18 @@ export default function ProductPage() {
           method: "POST",
           body: formData,
         });
+      } else if (removeThumbnail && saved.id) {
+        await authFetch(`${API_URL}/products/${saved.id}/thumbnail`, {
+          method: "DELETE",
+        });
       }
 
       await loadProducts(false);
       setForm({ name: "", description: "", price: "", categoryIds: [], editingId: null });
       setThumbnailFile(null);
       setThumbnailPreview(null);
+      setRemoveThumbnail(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       setUi((current) => ({ ...current, isModalOpen: false }));
     } catch (err) {
       setStatus({
@@ -223,6 +232,29 @@ export default function ProductPage() {
     }
   }
 
+  async function handleRemoveThumbnail(productId: number) {
+    if (!isAdmin) return;
+    try {
+      setUi((current) => ({ ...current, actionMenuId: null, actionMenuPosition: null }));
+      setStatus({ connection: "online", error: "" });
+      const response = await authFetch(`${API_URL}/products/${productId}/thumbnail`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const details = await response.json().catch(() => null);
+        throw new Error(details?.detail ?? "Could not remove thumbnail.");
+      }
+      setProducts((current) =>
+        current.map((p) => (p.id === productId ? { ...p, thumbnail: null } : p))
+      );
+    } catch (err) {
+      setStatus({
+        connection: "online",
+        error: err instanceof Error ? err.message : "Failed to remove thumbnail.",
+      });
+    }
+  }
+
   const openAddProduct = () => {
     if (!isAdmin) {
       setStatus({ connection: "online", error: "Please log in as an admin to add products." });
@@ -231,6 +263,8 @@ export default function ProductPage() {
     setForm({ name: "", description: "", price: "", categoryIds: [], editingId: null });
     setThumbnailFile(null);
     setThumbnailPreview(null);
+    setRemoveThumbnail(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setUi((current) => ({
       ...current,
       isModalOpen: true,
@@ -257,6 +291,8 @@ export default function ProductPage() {
           : `${API_URL}${product.thumbnail}`
         : null
     );
+    setRemoveThumbnail(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setUi((current) => ({
       ...current,
       isModalOpen: true,
@@ -383,7 +419,7 @@ export default function ProductPage() {
                     )}
                   </div>
                   {product.thumbnail && (
-                    <div className="mb-4 aspect-video w-full overflow-hidden rounded bg-slate-50 border border-slate-100 flex items-center justify-center">
+                    <div className="group/thumb relative mb-4 aspect-video w-full overflow-hidden rounded bg-slate-50 border border-slate-100 flex items-center justify-center">
                       <img
                         src={
                           product.thumbnail.startsWith("http")
@@ -397,6 +433,26 @@ export default function ProductPage() {
                           if (parent) parent.style.display = "none";
                         }}
                       />
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleRemoveThumbnail(product.id);
+                          }}
+                          title="Remove thumbnail"
+                          className="absolute top-2 right-2 rounded bg-black/75 hover:bg-red-600 text-white p-1.5 text-xs opacity-0 group-hover/thumb:opacity-100 transition-opacity backdrop-blur-xs cursor-pointer shadow-md"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   )}
                   <h3 className="pr-8 text-xl font-bold tracking-tight">{product.name}</h3>
@@ -433,7 +489,7 @@ export default function ProductPage() {
         {isAdmin && activeProduct && ui.actionMenuPosition && (
           <div
             id={`actions-${activeProduct.id}`}
-            className="fixed z-50 min-w-32 border border-slate-200 bg-white p-1 shadow-lg"
+            className="fixed z-50 min-w-36 border border-slate-200 bg-white p-1 shadow-lg rounded"
             style={ui.actionMenuPosition}
           >
             <button
@@ -443,6 +499,15 @@ export default function ProductPage() {
             >
               Edit
             </button>
+            {activeProduct.thumbnail && (
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-sm font-semibold text-amber-700 hover:bg-amber-50"
+                onClick={() => void handleRemoveThumbnail(activeProduct.id)}
+              >
+                Remove thumbnail
+              </button>
+            )}
             <button
               type="button"
               className="block w-full px-3 py-2 text-left text-sm font-bold text-red-700 hover:bg-red-50 hover:text-red-900"
@@ -545,6 +610,7 @@ export default function ProductPage() {
                     Thumbnail Image
                   </label>
                   <input
+                    ref={fileInputRef}
                     type="file"
                     accept="image/*"
                     className="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
@@ -552,13 +618,38 @@ export default function ProductPage() {
                       const file = e.target.files?.[0] || null;
                       setThumbnailFile(file);
                       if (file) {
+                        setRemoveThumbnail(false);
                         setThumbnailPreview(URL.createObjectURL(file));
                       }
                     }}
                   />
                   {thumbnailPreview && (
-                    <div className="mt-2 h-24 w-36 rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
-                      <img src={thumbnailPreview} alt="Preview" className="h-full w-full object-cover" />
+                    <div className="mt-2.5 flex items-center gap-3">
+                      <div className="h-20 w-32 rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
+                        <img src={thumbnailPreview} alt="Preview" className="h-full w-full object-cover" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setThumbnailFile(null);
+                          setThumbnailPreview(null);
+                          setRemoveThumbnail(true);
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = "";
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-xs font-semibold text-red-700 hover:bg-red-100 transition cursor-pointer"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                        <span>Remove thumbnail</span>
+                      </button>
                     </div>
                   )}
                 </div>

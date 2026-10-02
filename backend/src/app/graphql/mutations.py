@@ -82,6 +82,18 @@ class Mutation:
         crud_product.delete_product(db, product)
         return True
 
+    @strawberry.mutation(description="Remove thumbnail from a product (Admin only)")
+    def remove_product_thumbnail(self, info: strawberry.Info, id: int) -> ProductType:
+        require_admin_from_info(info)
+        db = info.context.db
+
+        product = crud_product.get_product(db, product_id=id)
+        if not product:
+            raise StrawberryGraphQLError(f"Product with ID {id} not found.")
+
+        updated = crud_product.update_product_thumbnail(db, product, None)
+        return ProductType.from_db(updated)
+
     @strawberry.mutation(description="Assign a category to a product (Admin only)")
     def assign_category_to_product(
         self,
