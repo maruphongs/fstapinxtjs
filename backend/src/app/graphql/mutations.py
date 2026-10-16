@@ -260,10 +260,22 @@ class Mutation:
         username: str,
         password: str,
     ) -> AuthPayload:
+        request = getattr(info.context, "request", None)
+        if request:
+            from fastapi import HTTPException
+            from app.core.rate_limit import get_client_ip, login_rate_limiter
+            client_ip = get_client_ip(request)
+            try:
+                login_rate_limiter.check_rate_limit(client_ip)
+            except HTTPException as e:
+                raise StrawberryGraphQLError(e.detail)
+
+
         db = info.context.db
         user = crud_user.authenticate_user(db, username=username, password=password)
         if not user:
             raise StrawberryGraphQLError("Incorrect username or password.")
+
         if not user.is_active:
             raise StrawberryGraphQLError("User account is inactive.")
 

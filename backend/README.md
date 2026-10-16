@@ -42,11 +42,25 @@ uv run fastapi dev src/app/main.py
 
 ## 🧪 Running Automated Tests
 
-Run the GraphQL automated verification suite:
+Run the test verification suites:
 
 ```bash
-uv run python test_graphql.py
+# Product project verification (access connections, unauthorized access, thumbnail removal)
+uv run python tests/test_products.py
+
+# Product thumbnail and upload verification
+uv run python tests/test_product_thumbnail.py
+
+# Redis-backed login rate limit verification (max 5 logins/minute)
+uv run python tests/test_login_rate_limit.py
+
+# GraphQL automated verification suite
+uv run python tests/test_graphql.py
+
+# WebSocket chatbot verification
+uv run python tests/test_chat_ws.py
 ```
+
 
 ---
 
@@ -232,3 +246,42 @@ mutation {
   deleteUser(id: 2)
 }
 ```
+
+---
+
+## 🛡️ Redis-Backed Login Rate Limiting
+
+The application enforces a rate limit on login attempts: **maximum 5 login attempts per minute (60 seconds)**. State is maintained in Redis storage.
+
+### 1. Redis Service Setup
+Start Redis via Docker or Docker Compose from the project root:
+```bash
+docker compose up -d
+# Or standalone docker command:
+docker run -d --name uniweb-redis -p 6379:6379 --restart unless-stopped redis:alpine
+```
+
+### 2. Configuration (`app/core/config.py`)
+- `REDIS_URL`: `redis://localhost:6379/0`
+- `LOGIN_RATE_LIMIT_MAX_ATTEMPTS`: `5`
+- `LOGIN_RATE_LIMIT_WINDOW_SECONDS`: `60`
+
+### 3. Redis Storage Structure
+- **Key Pattern**: `ratelimit:login:{client_ip}` (e.g., `ratelimit:login:127.0.0.1`)
+- **Value**: Atomic integer counter incremented per login attempt (`INCR`)
+- **TTL**: Remaining seconds in the 60-second window (`EXPIRE`)
+
+### 4. Rate Limiting Behavior
+- Requests 1 to 5 within a 60-second window are processed normally.
+- Request 6 and above are rejected immediately with **HTTP 429 Too Many Requests**:
+```json
+{
+  "detail": "Too many login attempts. Limit is 5 attempts per 60 seconds. Please try again in 59 seconds."
+}
+```
+- **Response Headers**:
+  - `Retry-After`: Remaining seconds until reset
+  - `X-RateLimit-Limit`: `5`
+  - `X-RateLimit-Remaining`: `0`
+  - `X-RateLimit-Reset`: Remaining seconds
+

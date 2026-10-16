@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_current_active_user
 from app.auth.security import create_access_token
 from app.core.database import get_db
+from app.core.rate_limit import login_rate_limiter
 from app.crud import user as crud_user
 from app.models.user import User
 from app.schemas.auth import Token, UserLogin, UserRegister, UserResponse
@@ -17,8 +18,9 @@ router = APIRouter(
 )
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token, dependencies=[Depends(login_rate_limiter)])
 def login_json(
+
     credentials: UserLogin,
     db: Annotated[Session, Depends(get_db)],
 ):
@@ -44,8 +46,9 @@ def login_json(
     }
 
 
-@router.post("/token", response_model=Token, include_in_schema=False)
+@router.post("/token", response_model=Token, dependencies=[Depends(login_rate_limiter)], include_in_schema=False)
 def login_oauth2_form(
+
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[Session, Depends(get_db)],
 ):

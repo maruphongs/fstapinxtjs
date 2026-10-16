@@ -1,11 +1,32 @@
 from collections.abc import Sequence
 
+from pathlib import Path
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.category import Category
 from app.models.product import Product
 from app.schemas.product import ProductCreate, ProductUpdate
+
+
+def delete_thumbnail_file(thumbnail_path: str | None) -> bool:
+    """Safely delete thumbnail image file from disk if it exists in THUMBNAIL_DIR."""
+    if not thumbnail_path:
+        return False
+    clean_path = thumbnail_path.split("?")[0].rstrip("/")
+    filename = Path(clean_path).name
+    if not filename:
+        return False
+    target_file = settings.THUMBNAIL_DIR / filename
+    if target_file.is_file():
+        try:
+            target_file.unlink()
+            return True
+        except OSError:
+            pass
+    return False
 
 
 def get_product(db: Session, product_id: int) -> Product | None:
@@ -43,9 +64,15 @@ def update_product(db: Session, product: Product, product_in: ProductUpdate) -> 
         product.description = product_in.description
     if product_in.price is not None:
         product.price = product_in.price
+
     if "thumbnail" in product_in.model_fields_set:
-        product.thumbnail = product_in.thumbnail if product_in.thumbnail else None
+        new_thumbnail = product_in.thumbnail if product_in.thumbnail else None
+        if product.thumbnail and product.thumbnail != new_thumbnail:
+            delete_thumbnail_file(product.thumbnail)
+        product.thumbnail = new_thumbnail
     elif product_in.thumbnail is not None:
+        if product.thumbnail and product.thumbnail != product_in.thumbnail:
+            delete_thumbnail_file(product.thumbnail)
         product.thumbnail = product_in.thumbnail
 
     if product_in.category_ids is not None:
@@ -60,6 +87,8 @@ def update_product(db: Session, product: Product, product_in: ProductUpdate) -> 
 
 
 def update_product_thumbnail(db: Session, product: Product, thumbnail: str | None) -> Product:
+    if product.thumbnail and product.thumbnail != thumbnail:
+        delete_thumbnail_file(product.thumbnail)
     product.thumbnail = thumbnail
     db.commit()
     db.refresh(product)
@@ -67,6 +96,8 @@ def update_product_thumbnail(db: Session, product: Product, thumbnail: str | Non
 
 
 def delete_product(db: Session, product: Product) -> None:
+    if product.thumbnail:
+        delete_thumbnail_file(product.thumbnail)
     db.delete(product)
     db.commit()
 

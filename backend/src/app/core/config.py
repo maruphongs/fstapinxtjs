@@ -27,5 +27,11 @@ class Settings(BaseModel):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
+    # Redis & Login Rate Limiting settings (5 times per minute)
+    REDIS_URL: str = "redis://localhost:6379/0"
+    LOGIN_RATE_LIMIT_MAX_ATTEMPTS: int = 5
+    LOGIN_RATE_LIMIT_WINDOW_SECONDS: int = 60
+
 
 settings = Settings()
+

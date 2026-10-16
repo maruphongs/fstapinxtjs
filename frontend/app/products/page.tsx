@@ -149,12 +149,15 @@ export default function ProductPage() {
       setUi((current) => ({ ...current, submitting: true }));
       setStatus({ connection: "online", error: "" });
 
-      const bodyPayload = {
+      const bodyPayload: Record<string, unknown> = {
         name: form.name.trim(),
         description: form.description.trim(),
         price: Number(form.price),
         category_ids: form.categoryIds,
       };
+      if (removeThumbnail) {
+        bodyPayload.thumbnail = null;
+      }
 
       const response = await authFetch(
         `${API_URL}/products${isEditing ? `/${form.editingId}` : ""}`,
@@ -175,14 +178,22 @@ export default function ProductPage() {
       if (thumbnailFile && saved.id) {
         const formData = new FormData();
         formData.append("file", thumbnailFile);
-        await authFetch(`${API_URL}/products/${saved.id}/thumbnail`, {
+        const thumbRes = await authFetch(`${API_URL}/products/${saved.id}/thumbnail`, {
           method: "POST",
           body: formData,
         });
+        if (!thumbRes.ok) {
+          const details = await thumbRes.json().catch(() => null);
+          throw new Error(details?.detail ?? "Could not upload thumbnail.");
+        }
       } else if (removeThumbnail && saved.id) {
-        await authFetch(`${API_URL}/products/${saved.id}/thumbnail`, {
+        const thumbRes = await authFetch(`${API_URL}/products/${saved.id}/thumbnail`, {
           method: "DELETE",
         });
+        if (!thumbRes.ok && thumbRes.status !== 404) {
+          const details = await thumbRes.json().catch(() => null);
+          throw new Error(details?.detail ?? "Could not remove thumbnail.");
+        }
       }
 
       await loadProducts(false);
@@ -429,10 +440,14 @@ export default function ProductPage() {
                         alt={product.name}
                         className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                         onError={(e) => {
-                          const parent = (e.currentTarget as HTMLElement).parentElement;
-                          if (parent) parent.style.display = "none";
+                          e.currentTarget.style.display = "none";
+                          const fallback = e.currentTarget.parentElement?.querySelector(".thumb-fallback");
+                          if (fallback) (fallback as HTMLElement).style.display = "flex";
                         }}
                       />
+                      <div className="thumb-fallback hidden h-full w-full flex-col items-center justify-center text-slate-400 text-xs">
+                        <span>Image unavailable</span>
+                      </div>
                       {isAdmin && (
                         <button
                           type="button"

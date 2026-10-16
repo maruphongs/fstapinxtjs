@@ -175,12 +175,22 @@ def save_thumbnail_file(file: UploadFile, product_id: int | str = "temp") -> str
     summary="Upload product thumbnail image",
 )
 @router.post(
+    "/{product_id}/thumbnail/",
+    response_model=ProductResponse,
+    include_in_schema=False,
+)
+@router.post(
     "/{product_id}/upload-thumbnail",
     response_model=ProductResponse,
     include_in_schema=False,
 )
 @router.put(
     "/{product_id}/thumbnail",
+    response_model=ProductResponse,
+    include_in_schema=False,
+)
+@router.put(
+    "/{product_id}/thumbnail/",
     response_model=ProductResponse,
     include_in_schema=False,
 )
@@ -205,16 +215,6 @@ def upload_product_thumbnail(
             detail="Product not found",
         )
 
-    # Clean up existing thumbnail file if stored locally
-    if product.thumbnail and product.thumbnail.startswith("/uploads/thumbnails/"):
-        old_filename = Path(product.thumbnail).name
-        old_file = settings.THUMBNAIL_DIR / old_filename
-        if old_file.is_file():
-            try:
-                old_file.unlink()
-            except OSError:
-                pass
-
     thumbnail_url = save_thumbnail_file(upload_file, product_id=product_id)
     return crud_product.update_product_thumbnail(db, product, thumbnail_url)
 
@@ -223,6 +223,11 @@ def upload_product_thumbnail(
     "/{product_id}/thumbnail",
     response_model=ProductResponse,
     summary="Delete product thumbnail image",
+)
+@router.delete(
+    "/{product_id}/thumbnail/",
+    response_model=ProductResponse,
+    include_in_schema=False,
 )
 def delete_product_thumbnail(
     product_id: int,
@@ -235,15 +240,6 @@ def delete_product_thumbnail(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found",
         )
-
-    if product.thumbnail and product.thumbnail.startswith("/uploads/thumbnails/"):
-        old_filename = Path(product.thumbnail).name
-        old_file = settings.THUMBNAIL_DIR / old_filename
-        if old_file.is_file():
-            try:
-                old_file.unlink()
-            except OSError:
-                pass
 
     return crud_product.update_product_thumbnail(db, product, None)
 
