@@ -14,11 +14,20 @@ type Product = {
 type Category = { id: number; name: string; products?: { id: number; name: string; price: number }[] };
 type SortKey = "id" | "name" | "price";
 type ConnectionStatus = "checking" | "online" | "offline";
+type ReservationInfo = {
+  is_locked: boolean;
+  reserved_by_user_id?: number | null;
+  reserved_by_current_user: boolean;
+  expires_at?: string | null;
+  remaining_seconds: number;
+};
 
 export default function ProductPage() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [reservations, setReservations] = useState<Record<number, ReservationInfo>>({});
+  const [reservingId, setReservingId] = useState<number | null>(null);
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -56,12 +65,35 @@ export default function ProductPage() {
     return () => window.removeEventListener("auth-changed", handleAuthChange);
   }, []);
 
+  async function loadReservations(productList: Product[]) {
+    try {
+      const statuses: Record<number, ReservationInfo> = {};
+      await Promise.all(
+        productList.map(async (p) => {
+          try {
+            const res = await authFetch(`${API_URL}/products/${p.id}/reservation`, { cache: "no-store" });
+            if (res.ok) {
+              statuses[p.id] = await res.json();
+            }
+          } catch {
+            // ignore network failure for individual items
+          }
+        })
+      );
+      setReservations(statuses);
+    } catch {
+      // fallback
+    }
+  }
+
   async function loadProducts(showLoading = false) {
     try {
       if (showLoading) setUi((current) => ({ ...current, loading: true }));
       const response = await fetch(`${API_URL}/products`, { cache: "no-store" });
       if (!response.ok) throw new Error("Could not load products.");
-      setProducts(await response.json());
+      const data: Product[] = await response.json();
+      setProducts(data);
+      void loadReservations(data);
       setStatus({ connection: "online", error: "" });
     } catch (err) {
       setStatus((current) => ({
@@ -71,6 +103,72 @@ export default function ProductPage() {
       }));
     } finally {
       setUi((current) => ({ ...current, loading: false }));
+    }
+  }
+
+  async function handleReserve(productId: number, durationMinutes = 5) {
+    if (!user) {
+      setStatus({ connection: "online", error: "Please log in to reserve this product." });
+      return;
+    }
+    setReservingId(productId);
+    try {
+      const res = await authFetch(`${API_URL}/products/${productId}/reserve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ duration_minutes: durationMinutes }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || "Failed to reserve item.");
+      }
+      setReservations((prev) => ({
+        ...prev,
+        [productId]: {
+          is_locked: true,
+          reserved_by_current_user: true,
+          reserved_by_user_id: data.user_id,
+          expires_at: data.expires_at,
+          remaining_seconds: data.remaining_seconds,
+        },
+      }));
+      setStatus({ connection: "online", error: "" });
+    } catch (err) {
+      setStatus({
+        connection: "online",
+        error: err instanceof Error ? err.message : "Could not reserve product.",
+      });
+    } finally {
+      setReservingId(null);
+    }
+  }
+
+  async function handleReleaseReservation(productId: number) {
+    if (!user) return;
+    setReservingId(productId);
+    try {
+      const res = await authFetch(`${API_URL}/products/${productId}/release`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || "Failed to release reservation.");
+      }
+      setReservations((prev) => ({
+        ...prev,
+        [productId]: {
+          is_locked: false,
+          reserved_by_current_user: false,
+          remaining_seconds: 0,
+        },
+      }));
+    } catch (err) {
+      setStatus({
+        connection: "online",
+        error: err instanceof Error ? err.message : "Could not release reservation.",
+      });
+    } finally {
+      setReservingId(null);
     }
   }
 
@@ -87,12 +185,38 @@ export default function ProductPage() {
     }
   }
 
+  // Countdown timer effect
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setReservations((prev) => {
+        let changed = false;
+        const next: Record<number, ReservationInfo> = {};
+        for (const [idStr, info] of Object.entries(prev)) {
+          const id = Number(idStr);
+          if (info.is_locked && info.remaining_seconds > 0) {
+            changed = true;
+            const newRemaining = info.remaining_seconds - 1;
+            next[id] = {
+              ...info,
+              remaining_seconds: newRemaining,
+              is_locked: newRemaining > 0,
+            };
+          } else {
+            next[id] = info;
+          }
+        }
+        return changed ? next : prev;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     void loadProducts(true);
     void loadCategories();
     const refreshTimer = window.setInterval(() => void loadProducts(), 10000);
     return () => window.clearInterval(refreshTimer);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (!ui.isModalOpen && ui.actionMenuId === null) return;
@@ -493,6 +617,66 @@ export default function ProductPage() {
                         <span className="text-xs text-slate-400">Uncategorized</span>
                       )}
                     </div>
+
+                    {/* Reservation & Lock status bar */}
+                    {(() => {
+                      const lock = reservations[product.id];
+                      const isLocked = lock?.is_locked && lock.remaining_seconds > 0;
+                      const isOwner = lock?.reserved_by_current_user;
+                      const mins = Math.floor((lock?.remaining_seconds || 0) / 60);
+                      const secs = (lock?.remaining_seconds || 0) % 60;
+                      const timerText = `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+
+                      return (
+                        <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2">
+                          <div className="flex items-center justify-between text-xs">
+                            {isLocked ? (
+                              <span className={`inline-flex items-center gap-1.5 font-semibold px-2 py-0.5 rounded-full ${isOwner ? "bg-amber-100 text-amber-900 border border-amber-300" : "bg-red-100 text-red-900 border border-red-300"}`}>
+                                <span className={`h-2 w-2 rounded-full ${isOwner ? "bg-amber-500 animate-pulse" : "bg-red-500"}`} />
+                                {isOwner ? `Reserved by you (${timerText})` : `Locked (${timerText})`}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 font-semibold text-emerald-600">
+                                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                                Available
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex gap-2">
+                            {(!isLocked || isOwner) ? (
+                              <button
+                                type="button"
+                                disabled={reservingId === product.id}
+                                onClick={() => void handleReserve(product.id, 5)}
+                                className={`flex-1 rounded-md py-1.5 px-3 text-xs font-bold transition shadow-sm ${isLocked && isOwner ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-emerald-700 hover:bg-emerald-800 text-white"}`}
+                              >
+                                {reservingId === product.id ? "Processing..." : isLocked && isOwner ? "Extend Lock (+5m)" : "Reserve (Lock 5m)"}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                disabled
+                                className="flex-1 rounded-md py-1.5 px-3 text-xs font-bold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                              >
+                                Locked by another user
+                              </button>
+                            )}
+
+                            {(isOwner || (isAdmin && isLocked)) && (
+                              <button
+                                type="button"
+                                disabled={reservingId === product.id}
+                                onClick={() => void handleReleaseReservation(product.id)}
+                                className="rounded-md border border-slate-300 bg-white hover:bg-slate-50 py-1.5 px-3 text-xs font-semibold text-slate-700 transition"
+                              >
+                                Release
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </article>
               ))}
