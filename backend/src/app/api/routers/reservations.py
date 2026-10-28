@@ -48,20 +48,28 @@ def get_product_reservation_status(
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
 
-    active = crud_reservation.get_active_reservation(db, product_id)
-    if not active:
-        return ProductLockStatus(is_locked=False, remaining_seconds=0)
+    crud_reservation.expire_stale_reservations(db, product_id=product_id)
+    active_count = crud_reservation.count_active_reservations(db, product_id)
+    available = max(0, product.stock - active_count)
+    is_locked = active_count >= product.stock and product.stock > 0
+
+    curr_id = current_user.id if current_user else None
+    user_res = (
+        crud_reservation.get_user_active_reservation(db, product_id, curr_id)
+        if curr_id else None
+    )
 
     now = datetime.utcnow()
-    remaining = max(0, int((active.expires_at - now).total_seconds()))
-    curr_id = current_user.id if current_user else None
+    remaining = max(0, int((user_res.expires_at - now).total_seconds())) if user_res else 0
 
     return ProductLockStatus(
-        is_locked=True,
-        reserved_by_user_id=active.user_id,
-        reserved_by_current_user=(curr_id == active.user_id),
-        expires_at=active.expires_at,
+        is_locked=is_locked,
+        reserved_by_user_id=user_res.user_id if user_res else None,
+        reserved_by_current_user=user_res is not None,
+        expires_at=user_res.expires_at if user_res else None,
         remaining_seconds=remaining,
+        stock=product.stock,
+        available_stock=available,
     )
 
 
@@ -75,6 +83,9 @@ def reserve_product(
     product = crud_product.get_product(db, product_id)
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+    if product.stock == 0:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Product is out of stock.")
 
     try:
         res = crud_reservation.create_or_extend_reservation(
@@ -102,6 +113,6 @@ def release_product_reservation(
         success = crud_reservation.release_reservation(db, product_id, current_user)
         if not success:
             return {"message": "No active reservation found to release"}
-        return {"message": "Reservation lock released successfully"}
+        return {"message": "Reservation released successfully"}
     except PermissionError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))

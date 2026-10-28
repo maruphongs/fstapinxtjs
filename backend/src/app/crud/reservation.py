@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from sqlalchemy import and_, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
 from app.models.product import Product
@@ -18,7 +18,7 @@ def expire_stale_reservations(db: Session, product_id: int | None = None) -> Non
     )
     if product_id is not None:
         query = query.where(Reservation.product_id == product_id)
-    
+
     stale = db.scalars(query).all()
     for res in stale:
         res.status = "expired"
@@ -26,7 +26,23 @@ def expire_stale_reservations(db: Session, product_id: int | None = None) -> Non
         db.commit()
 
 
+def count_active_reservations(db: Session, product_id: int) -> int:
+    """Count active (non-expired) reservations for a product."""
+    now = datetime.utcnow()
+    result = db.scalar(
+        select(func.count()).where(
+            and_(
+                Reservation.product_id == product_id,
+                Reservation.status == "active",
+                Reservation.expires_at > now,
+            )
+        )
+    )
+    return result or 0
+
+
 def get_active_reservation(db: Session, product_id: int) -> Reservation | None:
+    """Get the most recent active reservation for a product (the lock holder)."""
     expire_stale_reservations(db, product_id=product_id)
     now = datetime.utcnow()
     stmt = (
@@ -43,6 +59,22 @@ def get_active_reservation(db: Session, product_id: int) -> Reservation | None:
     return db.scalar(stmt)
 
 
+def get_user_active_reservation(db: Session, product_id: int, user_id: int) -> Reservation | None:
+    """Get active reservation for a specific user on a product."""
+    expire_stale_reservations(db, product_id=product_id)
+    now = datetime.utcnow()
+    return db.scalar(
+        select(Reservation).where(
+            and_(
+                Reservation.product_id == product_id,
+                Reservation.user_id == user_id,
+                Reservation.status == "active",
+                Reservation.expires_at > now,
+            )
+        )
+    )
+
+
 def create_or_extend_reservation(
     db: Session,
     product: Product,
@@ -50,26 +82,29 @@ def create_or_extend_reservation(
     duration_minutes: int = 5,
 ) -> Reservation:
     expire_stale_reservations(db, product_id=product.id)
-    active = get_active_reservation(db, product_id=product.id)
-    
-    now = datetime.utcnow()
-    expires_at = now + timedelta(minutes=duration_minutes)
 
-    if active:
-        if active.user_id != user.id:
-            raise ValueError("Product is currently reserved and locked by another user.")
-        # If active by same user, extend expiration
-        active.expires_at = expires_at
+    # Check if user already has an active reservation — extend it
+    existing = get_user_active_reservation(db, product.id, user.id)
+    if existing:
+        existing.expires_at = datetime.utcnow() + timedelta(minutes=duration_minutes)
         db.commit()
-        db.refresh(active)
-        return active
+        db.refresh(existing)
+        return existing
+
+    # Check stock availability
+    active_count = count_active_reservations(db, product.id)
+    if active_count >= product.stock:
+        raise ValueError(
+            f"No stock available to reserve. "
+            f"{product.stock} in stock, {active_count} currently reserved."
+        )
 
     reservation = Reservation(
         product_id=product.id,
         user_id=user.id,
         status="active",
-        expires_at=expires_at,
-        created_at=now,
+        expires_at=datetime.utcnow() + timedelta(minutes=duration_minutes),
+        created_at=datetime.utcnow(),
     )
     db.add(reservation)
     db.commit()
@@ -78,12 +113,17 @@ def create_or_extend_reservation(
 
 
 def release_reservation(db: Session, product_id: int, user: User) -> bool:
-    active = get_active_reservation(db, product_id=product_id)
-    if not active:
-        return False
-    if active.user_id != user.id and user.role != "admin":
+    existing = get_user_active_reservation(db, product_id, user.id)
+    if not existing:
+        if user.role == "admin":
+            # Admin can release any active reservation
+            existing = get_active_reservation(db, product_id)
+        if not existing:
+            return False
+
+    if existing.user_id != user.id and user.role != "admin":
         raise PermissionError("You cannot release a lock owned by another user.")
-    
-    active.status = "released"
+
+    existing.status = "released"
     db.commit()
     return True

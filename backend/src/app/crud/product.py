@@ -43,6 +43,7 @@ def create_product(db: Session, product_in: ProductCreate) -> Product:
         name=product_in.name,
         description=product_in.description,
         price=product_in.price,
+        stock=product_in.stock,
         thumbnail=product_in.thumbnail,
     )
     if product_in.category_ids:
@@ -64,6 +65,8 @@ def update_product(db: Session, product: Product, product_in: ProductUpdate) -> 
         product.description = product_in.description
     if product_in.price is not None:
         product.price = product_in.price
+    if product_in.stock is not None:
+        product.stock = product_in.stock
 
     if "thumbnail" in product_in.model_fields_set:
         new_thumbnail = product_in.thumbnail if product_in.thumbnail else None

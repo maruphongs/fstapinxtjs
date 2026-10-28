@@ -81,10 +81,13 @@ def init_db() -> None:
     # Check if existing products table needs thumbnail column
     if inspector.has_table("products"):
         product_cols = {col["name"] for col in inspector.get_columns("products")}
-        if "thumbnail" not in product_cols:
-            from sqlalchemy import text
-            with engine.connect() as conn:
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            if "thumbnail" not in product_cols:
                 conn.execute(text("ALTER TABLE products ADD COLUMN thumbnail VARCHAR"))
+                conn.commit()
+            if "stock" not in product_cols:
+                conn.execute(text("ALTER TABLE products ADD COLUMN stock INTEGER NOT NULL DEFAULT 0"))
                 conn.commit()
 
     Base.metadata.create_all(bind=engine)

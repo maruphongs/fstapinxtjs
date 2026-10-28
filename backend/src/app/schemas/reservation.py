@@ -26,3 +26,5 @@ class ProductLockStatus(BaseModel):
     reserved_by_current_user: bool = False
     expires_at: datetime | None = None
     remaining_seconds: int = 0
+    stock: int = 0
+    available_stock: int = 0

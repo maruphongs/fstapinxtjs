@@ -13,6 +13,7 @@ class Product(Base):
     name: Mapped[str] = mapped_column(String, index=True, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     price: Mapped[float] = mapped_column(Float, nullable=False)
+    stock: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     thumbnail: Mapped[str | None] = mapped_column(String, nullable=True)
 
     categories: Mapped[list[Category]] = relationship(

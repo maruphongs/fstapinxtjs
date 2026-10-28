@@ -8,6 +8,7 @@ type Product = {
   name: string;
   description: string;
   price: number;
+  stock: number;
   thumbnail?: string | null;
   categories: { id: number; name: string }[];
 };
@@ -20,6 +21,8 @@ type ReservationInfo = {
   reserved_by_current_user: boolean;
   expires_at?: string | null;
   remaining_seconds: number;
+  stock: number;
+  available_stock: number;
 };
 
 export default function ProductPage() {
@@ -32,6 +35,7 @@ export default function ProductPage() {
     name: "",
     description: "",
     price: "",
+    stock: "0",
     categoryIds: [] as number[],
     editingId: null as number | null,
   });
@@ -277,6 +281,7 @@ export default function ProductPage() {
         name: form.name.trim(),
         description: form.description.trim(),
         price: Number(form.price),
+        stock: Number(form.stock),
         category_ids: form.categoryIds,
       };
       if (removeThumbnail) {
@@ -321,7 +326,7 @@ export default function ProductPage() {
       }
 
       await loadProducts(false);
-      setForm({ name: "", description: "", price: "", categoryIds: [], editingId: null });
+      setForm({ name: "", description: "", price: "", stock: "0", categoryIds: [], editingId: null });
       setThumbnailFile(null);
       setThumbnailPreview(null);
       setRemoveThumbnail(false);
@@ -395,7 +400,7 @@ export default function ProductPage() {
       setStatus({ connection: "online", error: "Please log in as an admin to add products." });
       return;
     }
-    setForm({ name: "", description: "", price: "", categoryIds: [], editingId: null });
+    setForm({ name: "", description: "", price: "", stock: "0", categoryIds: [], editingId: null });
     setThumbnailFile(null);
     setThumbnailPreview(null);
     setRemoveThumbnail(false);
@@ -415,6 +420,7 @@ export default function ProductPage() {
       name: product.name,
       description: product.description,
       price: String(product.price),
+      stock: String(product.stock),
       categoryIds: product.categories.map((category) => category.id),
       editingId: product.id,
     });
@@ -621,54 +627,76 @@ export default function ProductPage() {
                     {/* Reservation & Lock status bar */}
                     {(() => {
                       const lock = reservations[product.id];
-                      const isLocked = lock?.is_locked && lock.remaining_seconds > 0;
-                      const isOwner = lock?.reserved_by_current_user;
+                      const stock = lock?.stock ?? product.stock;
+                      const available = lock?.available_stock ?? stock;
+                      const isOwner = !!lock?.reserved_by_current_user;
+                      const hasLock = isOwner && (lock?.remaining_seconds ?? 0) > 0;
+                      const outOfStock = stock === 0;
+                      const noAvailable = available === 0 && !isOwner;
                       const mins = Math.floor((lock?.remaining_seconds || 0) / 60);
                       const secs = (lock?.remaining_seconds || 0) % 60;
                       const timerText = `${mins}:${secs < 10 ? "0" : ""}${secs}`;
 
                       return (
                         <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2">
-                          <div className="flex items-center justify-between text-xs">
-                            {isLocked ? (
-                              <span className={`inline-flex items-center gap-1.5 font-semibold px-2 py-0.5 rounded-full ${isOwner ? "bg-amber-100 text-amber-900 border border-amber-300" : "bg-red-100 text-red-900 border border-red-300"}`}>
-                                <span className={`h-2 w-2 rounded-full ${isOwner ? "bg-amber-500 animate-pulse" : "bg-red-500"}`} />
-                                {isOwner ? `Reserved by you (${timerText})` : `Locked (${timerText})`}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 font-semibold text-emerald-600">
-                                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                                Available
+                          {/* Stock row */}
+                          <div className="flex items-center justify-between text-xs text-slate-500">
+                            <span className="font-medium">
+                              Stock: <span className={`font-bold ${stock === 0 ? "text-red-600" : available === 0 ? "text-amber-600" : "text-emerald-700"}`}>{available} / {stock}</span> available
+                            </span>
+                            {hasLock && lock?.expires_at && (
+                              <span className="text-amber-700 font-semibold">
+                                Expires: {new Date(lock.expires_at).toLocaleTimeString()}
                               </span>
                             )}
                           </div>
 
+                          {/* Lock badge */}
+                          <div className="flex items-center gap-2 text-xs">
+                            {outOfStock ? (
+                              <span className="inline-flex items-center gap-1.5 font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200">
+                                <span className="h-2 w-2 rounded-full bg-red-500" /> Out of Stock
+                              </span>
+                            ) : hasLock ? (
+                              <span className="inline-flex items-center gap-1.5 font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                                <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                                Reserved by you · {timerText}
+                              </span>
+                            ) : noAvailable ? (
+                              <span className="inline-flex items-center gap-1.5 font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 border border-orange-200">
+                                <span className="h-2 w-2 rounded-full bg-orange-500" /> Fully Reserved
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-600">
+                                <span className="h-2 w-2 rounded-full bg-emerald-500" /> Available
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Action buttons */}
                           <div className="flex gap-2">
-                            {(!isLocked || isOwner) ? (
+                            {!outOfStock && (!noAvailable || isOwner) ? (
                               <button
                                 type="button"
-                                disabled={reservingId === product.id}
+                                disabled={reservingId === product.id || !user}
                                 onClick={() => void handleReserve(product.id, 5)}
-                                className={`flex-1 rounded-md py-1.5 px-3 text-xs font-bold transition shadow-sm ${isLocked && isOwner ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-emerald-700 hover:bg-emerald-800 text-white"}`}
+                                title={!user ? "Log in to reserve" : undefined}
+                                className={`flex-1 rounded-md py-1.5 px-3 text-xs font-bold transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${hasLock ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-emerald-700 hover:bg-emerald-800 text-white"}`}
                               >
-                                {reservingId === product.id ? "Processing..." : isLocked && isOwner ? "Extend Lock (+5m)" : "Reserve (Lock 5m)"}
+                                {reservingId === product.id ? "Processing…" : hasLock ? "Extend (+5m)" : "Reserve (5 min)"}
                               </button>
                             ) : (
-                              <button
-                                type="button"
-                                disabled
-                                className="flex-1 rounded-md py-1.5 px-3 text-xs font-bold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                              >
-                                Locked by another user
+                              <button type="button" disabled className="flex-1 rounded-md py-1.5 px-3 text-xs font-bold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed">
+                                {outOfStock ? "Out of Stock" : "Fully Reserved"}
                               </button>
                             )}
 
-                            {(isOwner || (isAdmin && isLocked)) && (
+                            {(isOwner || (isAdmin && (lock?.is_locked ?? false))) && (
                               <button
                                 type="button"
                                 disabled={reservingId === product.id}
                                 onClick={() => void handleReleaseReservation(product.id)}
-                                className="rounded-md border border-slate-300 bg-white hover:bg-slate-50 py-1.5 px-3 text-xs font-semibold text-slate-700 transition"
+                                className="rounded-md border border-slate-300 bg-white hover:bg-red-50 hover:border-red-300 hover:text-red-700 py-1.5 px-3 text-xs font-semibold text-slate-700 transition"
                               >
                                 Release
                               </button>
@@ -800,6 +828,24 @@ export default function ProductPage() {
                       setForm((current) => ({ ...current, price: event.target.value }))
                     }
                     placeholder="0.00"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-600">
+                    Stock Quantity
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-[#009688] focus:bg-white"
+                    value={form.stock}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, stock: event.target.value }))
+                    }
+                    placeholder="0"
                     required
                   />
                 </div>
