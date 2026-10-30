@@ -1,6 +1,30 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
+import { API_URL } from "./lib/auth";
 
 export default function Home() {
+    const [corsTesting, setCorsTesting] = useState(false);
+    const [corsResult, setCorsResult] = useState<string | null>(null);
+
+    async function testCors() {
+        setCorsTesting(true);
+        setCorsResult(null);
+        try {
+            const response = await fetch(`${API_URL}/foo`, {
+                method: "HEAD",
+                headers: { "X-CORS-Test": "true" },
+            });
+            setCorsResult(`Unexpectedly received HTTP ${response.status}; HEAD was allowed by CORS.`);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            setCorsResult(`Browser request failed: ${message}. If the API is running, this is the expected CORS rejection.`);
+        } finally {
+            setCorsTesting(false);
+        }
+    }
+
     return (
         <main className="flex min-h-screen flex-col items-center p-12 bg-black bg-[radial-gradient(circle_at_center,#000_0,transparent_10%),linear-gradient(to_right,#039587_1px,transparent_1px),linear-gradient(to_bottom,#039587_1px,transparent_1px)] bg-size-[auto,40px_40px,40px_40px]">
             <div className="pointer-events-none absolute inset-x-0 top-0 h-full bg-linear-to-b from-black to-black/25" />
@@ -23,7 +47,20 @@ export default function Home() {
                     >
                         Explore GraphQL CRUD Studio →
                     </a>
+                    <button
+                        type="button"
+                        onClick={testCors}
+                        disabled={corsTesting}
+                        className="rounded-full border border-rose-400/60 bg-rose-500/15 px-6 py-2.5 text-sm font-bold text-rose-200 transition hover:bg-rose-500/25 disabled:opacity-60"
+                    >
+                        {corsTesting ? "Testing..." : "Test CORS"}
+                    </button>
                 </div>
+                {corsResult && (
+                    <p role="status" aria-live="polite" className="max-w-xl text-center text-sm text-rose-200">
+                        {corsResult}
+                    </p>
+                )}
             </div>
         </main>
     );

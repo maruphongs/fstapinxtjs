@@ -191,7 +191,6 @@ export default function GraphQLPage() {
   const [explorerLoading, setExplorerLoading] = useState(false);
   const [explorerTiming, setExplorerTiming] = useState<number | null>(null);
   const [explorerStatus, setExplorerStatus] = useState<"idle" | "success" | "error">("idle");
-
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const isAdmin = currentUser?.role === "admin";
